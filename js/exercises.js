@@ -64,8 +64,9 @@ const EXERCISES = [
     name: "Standing on one foot",
     category: "Balance",
     unit: "seconds",
+    sides: true,
     description: "Eyes open, stand on one leg without touching down or using support. A strong single-leg balance is linked to lower fall risk with age.",
-    howTo: "Stand near a wall or counter the first few times, just in case. Lift one foot, start the timer, stop it the moment you touch down, hop, or grab support. Try both legs.",
+    howTo: "Stand near a wall or counter the first few times, just in case. Lift one foot, start the timer, stop it the moment you touch down, hop, or grab support. Log each leg separately below — the target time is the same for both legs, but a big gap between your left and right (more than a few seconds) is itself worth noticing, since it often points to one side being weaker or a past injury still affecting balance.",
     hasTimer: true,
     timerLabel: "One-foot balance hold",
     normTable: [
@@ -178,9 +179,13 @@ export function renderExercisesView(container) {
       const valueInput = card.querySelector(".ex-value");
       const value = parseFloat(valueInput.value);
       if (Number.isNaN(value)) return;
-      addExerciseEntry({ dateISO: todayISO(), exerciseId: ex.id, value });
+      const entry = { dateISO: todayISO(), exerciseId: ex.id, value };
+      if (ex.sides) {
+        entry.side = card.querySelector(".ex-side").value;
+      }
+      addExerciseEntry(entry);
       valueInput.value = "";
-      showToast(`${ex.name} logged`);
+      showToast(`${ex.name}${ex.sides ? ` (${entry.side})` : ""} logged`);
       refreshCard(ex);
       refreshLogList();
     });
@@ -222,12 +227,30 @@ export function renderExercisesView(container) {
   function refreshCard(ex) {
     const card = grid.querySelector(`[data-exercise="${ex.id}"]`);
     const log = getExerciseLog().filter((e) => e.exerciseId === ex.id);
+    const latestEl = card.querySelector(".ex-latest");
+    const unitSuffix = ex.unit.includes("second") ? "s" : "";
+
+    if (ex.sides) {
+      const latestLeft = log.find((e) => e.side === "left");
+      const latestRight = log.find((e) => e.side === "right");
+      const bandLeft = latestLeft ? getBand(ex, latestLeft.value) : null;
+      const bandRight = latestRight ? getBand(ex, latestRight.value) : null;
+      const gap = latestLeft && latestRight ? Math.abs(latestLeft.value - latestRight.value) : null;
+      if (latestEl) {
+        latestEl.innerHTML = [
+          `Left: ${latestLeft ? `<strong>${latestLeft.value}s</strong> (${formatDateShort(latestLeft.dateISO)}) ${bandLeft ? `<span class="badge badge-${bandLeft.tone}">${bandLeft.band}</span>` : ""}` : "not logged yet"}`,
+          `Right: ${latestRight ? `<strong>${latestRight.value}s</strong> (${formatDateShort(latestRight.dateISO)}) ${bandRight ? `<span class="badge badge-${bandRight.tone}">${bandRight.band}</span>` : ""}` : "not logged yet"}`,
+          gap != null && gap >= 5 ? `<span class="badge badge-warn">${gap}s gap between sides — worth mentioning to a doctor if it persists</span>` : "",
+        ].filter(Boolean).join("<br>");
+      }
+      return;
+    }
+
     const latest = log[0];
     const band = latest ? getBand(ex, latest.value) : null;
-    const latestEl = card.querySelector(".ex-latest");
     if (latestEl) {
       latestEl.innerHTML = latest
-        ? `Last: <strong>${latest.value}</strong> ${ex.unit.includes("second") ? "s" : ""} on ${formatDateShort(latest.dateISO)} ${band ? `<span class="badge badge-${band.tone}">${band.band}</span>` : ""}`
+        ? `Last: <strong>${latest.value}</strong>${unitSuffix} on ${formatDateShort(latest.dateISO)} ${band ? `<span class="badge badge-${band.tone}">${band.band}</span>` : ""}`
         : `Not logged yet.`;
     }
     if (ex.normTable.length) {
@@ -251,7 +274,7 @@ export function renderExercisesView(container) {
         return `
       <li class="log-item">
         <div class="log-main">
-          <span class="log-value">${escapeHtml(ex ? ex.name : e.exerciseId)}: ${e.value}</span>
+          <span class="log-value">${escapeHtml(ex ? ex.name : e.exerciseId)}${e.side ? ` (${e.side})` : ""}: ${e.value}</span>
           <span class="log-date">${formatDateTime(e.createdAt || Date.now())}</span>
         </div>
         <button class="log-del" data-id="${e.id}" title="Delete">✕</button>
@@ -296,6 +319,14 @@ function exerciseCardHTML(ex) {
     ` : ""}
     <form class="ex-log-form" style="margin-top:0.4rem;">
       <div class="form-grid">
+        ${ex.sides ? `
+        <div class="field">
+          <label>Leg</label>
+          <select class="ex-side">
+            <option value="left">Left</option>
+            <option value="right">Right</option>
+          </select>
+        </div>` : ""}
         <div class="field">
           <label>Log (${ex.unit})</label>
           <input type="number" class="ex-value" step="0.5" min="0" placeholder="value" required />

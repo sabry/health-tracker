@@ -132,12 +132,20 @@ export function renderHeartRateView(container) {
           </div>
           <div class="hr-live-value" id="hr-live-value">— bpm</div>
           <svg class="hr-live-wave" id="hr-wave" viewBox="0 0 300 60" preserveAspectRatio="none"></svg>
-          <p class="timer-note" id="hr-camera-note">Cover the rear camera lens and flash gently with your fingertip. Hold still and breathe normally for ~15–20 seconds.</p>
+          <p class="timer-note" id="hr-camera-note">Tap "Start reading" first (your browser will ask to use the camera — allow it), then lay your fingertip flat over the rear camera lens on the back of your phone, just firmly enough to block out light. Hold still for about 15–20 seconds while it finds your pulse.</p>
           <div class="btn-row">
             <button id="hr-cam-start" class="btn btn-hr">📷 Start reading</button>
             <button id="hr-cam-stop" class="btn" disabled>Stop</button>
             <button id="hr-cam-save" class="btn btn-primary" disabled>Save reading</button>
           </div>
+          <details style="font-size:0.8rem; color:var(--text-dim); width:100%;">
+            <summary style="cursor:pointer;">How this works / troubleshooting</summary>
+            <p style="margin:0.4rem 0 0; line-height:1.5;">
+              Your phone's rear camera is right next to its flash (the little LED used for photos). Covering both with your fingertip lets the app watch tiny changes in how much light comes through your finger — with each heartbeat, a fresh pulse of blood arrives and briefly changes how much light gets through. The app is just counting that flicker.
+              <br><br>
+              On many Android phones the app can turn the flash on for you automatically, which works best. On iPhones, Safari usually won't let a website control the flash — if you don't feel warmth/light from the flash turning on, do this in a well-lit room or near a lamp instead, still covering the lens with your finger. Keep your hand still and relaxed; movement is the most common reason a reading fails.
+            </p>
+          </details>
         </div>
       </div>
 
