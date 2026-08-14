@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Health Tracker</title>
+<meta name="description" content="A personal health tracker: weight &amp; BMI, blood pressure, phone-sensor activity tracking, home exercises with age-adjusted targets, heart rate (including a camera pulse reader), and a preventive-care checklist." />
+<link rel="stylesheet" href="css/styles.css" />
+
+<!-- PWA: installable + offline -->
+<link rel="manifest" href="manifest.webmanifest" />
+<meta name="theme-color" content="#101d1a" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Health Tracker" />
+<link rel="icon" href="icons/favicon.ico" sizes="any" />
+<link rel="icon" href="icons/icon-192.png" type="image/png" sizes="192x192" />
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+</head>
+<body>
+  <header class="app-header">
+    <div>
+      <h1>💓 Health Tracker</h1>
+      <p class="tagline">Weight, activity, exercise, heart rate &amp; preventive care — all local to this device</p>
+    </div>
+    <div class="header-meta">
+      <button class="icon-btn" id="btn-profile" title="Profile &amp; settings">⚙</button>
+    </div>
+  </header>
+
+  <nav class="tabbar" id="tabbar" aria-label="Sections"></nav>
+
+  <main class="content">
+    <div id="view-root" class="view"></div>
+  </main>
+
+  <footer class="app-footer">
+    <p>Your data stays on this device (browser local storage) — nothing is uploaded anywhere. Export a backup from Profile.</p>
+    <p class="build-info">
+      Last updated <span id="build-time"></span> · <span id="sw-status">checking cache…</span>
+    </p>
+  </footer>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

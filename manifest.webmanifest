@@ -1,0 +1,16 @@
+{
+  "name": "Health Tracker",
+  "short_name": "Health Tracker",
+  "description": "A personal health tracker: weight & BMI, blood pressure, phone-sensor activity tracking, home exercises with age-adjusted targets, heart rate (including a camera pulse reader), and a preventive-care checklist.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#101d1a",
+  "theme_color": "#101d1a",
+  "orientation": "any",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
