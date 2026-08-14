@@ -14,7 +14,14 @@ const KEYS = {
   exerciseLog: PREFIX + "exerciseLog",
   hr: PREFIX + "hrLog",
   screenings: PREFIX + "screeningState",
+  meals: PREFIX + "mealLog",
+  aiSettings: PREFIX + "aiSettings",
 };
+
+// Keys deliberately excluded from backup export/import — aiSettings holds
+// your API key, which shouldn't end up in a backup file you might share or
+// store elsewhere. Re-enter it per device instead.
+const BACKUP_EXCLUDED_KEYS = ["aiSettings"];
 
 function readJSON(key, fallback) {
   try {
@@ -140,11 +147,28 @@ export function setScreeningState(itemId, patch) {
   return state[itemId];
 }
 
+// Meals: { dateISO, items: [{name, portion, calories, proteinG, carbsG, fatG}],
+//          totalCalories, totalProteinG, totalCarbsG, totalFatG, thumbnail?, source }
+export const getMealLog = () => getLog(KEYS.meals);
+export const addMealEntry = (e) => addEntry(KEYS.meals, e);
+export const deleteMealEntry = (id) => deleteEntry(KEYS.meals, id);
+
+// AI settings: { apiKey, model } — local to this device only, never included
+// in exported backups. Used to call Claude's API directly from the browser
+// for the camera meal-photo analyzer.
+export function getAiSettings() {
+  return readJSON(KEYS.aiSettings, {});
+}
+export function saveAiSettings(settings) {
+  writeJSON(KEYS.aiSettings, settings);
+}
+
 // ---- Backup / restore ----
 
 export function exportBackup() {
   const data = {};
   Object.entries(KEYS).forEach(([name, key]) => {
+    if (BACKUP_EXCLUDED_KEYS.includes(name)) return;
     data[name] = readJSON(key, name === "profile" || name === "screenings" ? {} : []);
   });
   data.exportedAt = new Date().toISOString();
@@ -153,6 +177,7 @@ export function exportBackup() {
 
 export function importBackup(data) {
   Object.entries(KEYS).forEach(([name, key]) => {
+    if (BACKUP_EXCLUDED_KEYS.includes(name)) return;
     if (data[name] !== undefined) writeJSON(key, data[name]);
   });
 }

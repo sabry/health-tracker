@@ -88,6 +88,19 @@ export function bmiCategory(value) {
   return { label: "Obesity range", tone: "danger" };
 }
 
+// Mifflin-St Jeor equation — a commonly used, reasonably well-validated
+// estimate of resting energy needs (BMR), then scaled up for activity level
+// to suggest a daily calorie target. This is a starting point, not a
+// prescription — actual needs vary by individual, and anyone with a
+// specific medical or weight goal should get a number from their doctor or
+// a dietitian instead.
+export function estimateDailyCalorieTarget({ kg, cm, age, sex, activityFactor = 1.375 }) {
+  if (!kg || !cm || !age) return null;
+  const sexOffset = sex === "female" ? -161 : 5;
+  const bmr = 10 * kg + 6.25 * cm - 5 * age + sexOffset;
+  return Math.round(bmr * activityFactor);
+}
+
 // Tanaka et al. (2001) age-predicted max heart rate — tracks better than
 // 220-age for older adults.
 export function hrMax(age) {

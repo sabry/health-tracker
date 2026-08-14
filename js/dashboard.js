@@ -1,4 +1,4 @@
-import { getWeightLog, getVitalsLog, getActivityLog, getExerciseLog, getHrLog } from "./storage.js";
+import { getWeightLog, getVitalsLog, getActivityLog, getExerciseLog, getHrLog, getMealLog } from "./storage.js";
 import { currentProfile } from "./profile.js";
 import {
   bmi, bmiCategory, restingHrCategory, bpCategory, round, todayISO, daysAgoISO,
@@ -60,6 +60,11 @@ export function renderDashboard(container, goToTab) {
   const streak = exerciseStreak();
   const age = profile.dobISO ? ageFromDOB(profile.dobISO) : null;
 
+  const todayMeals = getMealLog().filter((e) => e.dateISO === todayISO());
+  const todayCalories = todayMeals.reduce((sum, e) => sum + (e.totalCalories || 0), 0);
+  const calorieGoal = profile.calorieGoal;
+  const caloriePct = calorieGoal ? Math.min(100, Math.round((todayCalories / calorieGoal) * 100)) : null;
+
   container.innerHTML = `
     <div class="view-header">
       <h2>Today</h2>
@@ -94,6 +99,12 @@ export function renderDashboard(container, goToTab) {
         <div class="stat-label">Blood pressure</div>
         <div class="stat-value">${latestBp ? `${latestBp.sys}/${latestBp.dia}` : "Log one →"}</div>
         <div class="stat-sub">${bpCat ? bpCat.label : ""}</div>
+      </div>
+
+      <div class="stat-tile ${todayMeals.length ? "" : "empty"}" data-goto="meals">
+        <div class="stat-label">Calories today</div>
+        <div class="stat-value">${todayMeals.length ? `${todayCalories}${calorieGoal ? `<span class="unit">/ ${calorieGoal}</span>` : ""}` : "Log a meal →"}</div>
+        ${caloriePct != null ? `<div class="progress-bar-track" style="margin-top:0.4rem;"><div class="progress-bar-fill ${caloriePct >= 100 ? "over" : ""}" style="width:${caloriePct}%"></div></div>` : ""}
       </div>
     </div>
 

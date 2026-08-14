@@ -615,6 +615,72 @@ h1, h2, h3, h4 { font-weight: 650; }
   height: 60px;
 }
 
+/* ---------- Meal photo review ---------- */
+
+.meal-review-box {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.meal-item-row {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 0.7fr 0.7fr 0.7fr 0.7fr auto;
+  gap: 0.4rem;
+  align-items: center;
+  margin-bottom: 0.4rem;
+}
+
+.meal-item-row input {
+  background: var(--bg-panel-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 0.4rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  width: 100%;
+}
+
+.meal-item-row input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.meal-item-header {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-faint);
+}
+
+.meal-item-row .mi-remove {
+  background: none;
+  border: none;
+  color: var(--text-faint);
+  cursor: pointer;
+  font-size: 0.95rem;
+  padding: 0.2rem 0.35rem;
+  border-radius: 5px;
+  justify-self: center;
+}
+.meal-item-row .mi-remove:hover {
+  color: var(--danger);
+  background: rgba(239, 100, 97, 0.1);
+}
+
+@media (max-width: 720px) {
+  .meal-item-row {
+    grid-template-columns: 1fr 1fr;
+    grid-auto-flow: row;
+    padding: 0.5rem;
+    background: var(--bg-panel-2);
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+  }
+  .meal-item-row.meal-item-header { display: none; }
+  .meal-item-row .mi-remove { grid-column: 1 / -1; justify-self: end; }
+}
+
 /* ---------- Disclaimer ---------- */
 
 .disclaimer {

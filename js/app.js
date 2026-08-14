@@ -6,16 +6,18 @@ import { renderActivityView } from "./activity.js";
 import { renderExercisesView } from "./exercises.js";
 import { renderHeartRateView } from "./heartrate.js";
 import { renderScreeningsView } from "./screenings.js";
+import { renderMealsView } from "./meals.js";
 
 // Update this (date + time) whenever the app's files change, so the
 // footer's "Last updated" reflects the actual edit, not just the day.
-const BUILD_TIME = "Aug 14, 2026, 9:57 AM ET";
+const BUILD_TIME = "Aug 14, 2026, 10:22 AM ET";
 
 const TABS = [
   { id: "today", label: "Today", icon: "🏠", render: (el) => renderDashboard(el, goToTab) },
   { id: "weight", label: "Weight", icon: "⚖️", render: renderWeightView },
   { id: "vitals", label: "Vitals", icon: "🩺", render: renderVitalsView },
   { id: "activity", label: "Activity", icon: "🚶", render: renderActivityView },
+  { id: "meals", label: "Meals", icon: "🍽️", render: renderMealsView },
   { id: "exercises", label: "Exercises", icon: "💪", render: renderExercisesView },
   { id: "heartrate", label: "Heart Rate", icon: "❤️", render: renderHeartRateView },
   { id: "screenings", label: "Screenings", icon: "✅", render: renderScreeningsView },

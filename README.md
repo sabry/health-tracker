@@ -3,11 +3,16 @@
 A personal, self-contained health tracker: weight &amp; BMI, blood pressure /
 waist / sleep, phone-sensor activity tracking, a home exercise library with
 age-adjusted reference ranges, heart rate (including a camera-based pulse
-reader), and a preventive-care checklist.
+reader), AI-assisted meal-photo calorie/macro estimation, and a
+preventive-care checklist.
 
-No build step, no dependencies to install, no server, no accounts — it's
-plain HTML/CSS/JS, all data stays in your browser's local storage on your
-device, and it runs straight from the file system or from GitHub Pages.
+No build step, no dependencies to install, no accounts — it's plain
+HTML/CSS/JS, all data stays in your browser's local storage on your device,
+and it runs straight from the file system or from GitHub Pages. The one
+exception is the optional Meals photo analyzer, which — only if you paste in
+your own Anthropic API key — makes a direct API call from your phone's
+browser to Claude for that one feature; everything else stays fully local
+and offline.
 
 ## Features
 
@@ -32,6 +37,14 @@ device, and it runs straight from the file system or from GitHub Pages.
   estimates your heart rate from the brightness ripple each heartbeat
   causes (basic photoplethysmography, the same principle behind
   clip-on pulse oximeters — not a medical device).
+- **Meals** — snap a photo of a plate before you eat and, if you've added
+  your own Anthropic API key, Claude identifies the food items and estimates
+  calories/protein/carbs/fat for each — shown in an editable review table
+  before anything is saved, so you can correct the AI's guesses. Manual
+  entry works with no API key needed. Tracks daily totals against an
+  optional calorie target (a rough Mifflin-St Jeor starting estimate you can
+  override) and a 30-day trend chart. See "AI meal photo analysis" below for
+  the privacy/cost details before turning this on.
 - **Screenings** — a checklist of general USPSTF/CDC preventive-care
   guidance for a man in his early 60s (cholesterol, colorectal screening,
   vaccines, etc.), checkable and stored locally.
@@ -50,12 +63,41 @@ actually applies to you, especially before starting a new exercise routine,
 and seek care promptly for chest pain, severe shortness of breath, fainting,
 or other concerning symptoms.
 
+## AI meal photo analysis — read before turning this on
+
+The Meals tab can call Claude's API directly from your phone's browser to
+identify food in a photo and estimate calories/macros. This is opt-in and
+inert until you paste an API key into Meals → AI food analysis settings.
+Two things worth knowing plainly:
+
+1. **Your API key lives in this browser's local storage** and is sent as a
+   request header on every photo you analyze. It's visible to anyone with
+   access to this device/browser's developer tools. That's a reasonable
+   trade-off for a personal phone only you use — don't paste a key in here
+   on a shared or public device.
+2. **Each analysis is a small, metered API call** (a few cents at most with
+   the default Haiku model) and needs an internet connection. This is the
+   one feature in the app that costs money and doesn't work offline —
+   everything else stays free and local.
+
+The calorie/macro numbers are the model's best visual read of a photo, not a
+lab measurement — portion size and hidden ingredients (oil, sauces,
+dressings) are genuinely hard to judge from an image. The review screen
+before saving lets you fix anything that looks off; treat the numbers as
+"roughly this," useful for spotting patterns over weeks, not as precise
+nutrition facts.
+
+Your API key is deliberately excluded from **Profile → Export backup**, so
+it never ends up in a backup file you might share or store elsewhere.
+
 ## Your data
 
-Everything is stored in this browser's `localStorage`, on this device only
-— nothing is sent to a server, because there is no server. Use **Profile →
-Export backup** periodically, and especially before clearing browser data
-or switching devices; **Import backup** restores from that file.
+Everything else is stored in this browser's `localStorage`, on this device
+only — nothing is sent to a server, because there is no server (the one
+exception being the Meals photo analyzer's direct calls to Claude's API,
+described above). Use **Profile → Export backup** periodically, and
+especially before clearing browser data or switching devices; **Import
+backup** restores from that file.
 
 ## Running it
 
@@ -108,7 +150,8 @@ health-tracker/
 │   ├── activity.js         # accelerometer step counter + manual activity log
 │   ├── exercises.js        # exercise library, reference bands, stopwatch, log
 │   ├── heartrate.js        # manual HR log + camera PPG pulse reader
-│   └── screenings.js       # preventive-care checklist
+│   ├── screenings.js       # preventive-care checklist
+│   └── meals.js            # camera food photo → Claude API analysis + manual meal log
 └── README.md
 ```
 
