@@ -12,11 +12,27 @@ import { showToast } from "./ui.js";
 // periodic brightness ripple in the video feed. We sample the average red
 // channel every frame, detrend it, and count peaks to estimate BPM.
 //
+// A single beat-to-beat interval is noisy (motion, a missed peak, a stray
+// early one) — showing that raw "snapshot" number jumping around isn't
+// useful. Instead this smooths the displayed BPM over a rolling window of
+// recent beats, and separately watches how *consistent* that window is: once
+// several beats in a row agree closely (low variation) for long enough, the
+// reading is "stable" and we say so and stop automatically, rather than
+// leaving you staring at the screen. If it never settles down, we give up
+// after a timeout and say that too, instead of reading forever.
+//
 // This is a fun, genuinely-uses-your-phone-sensor feature, not a medical
 // device — lighting, motion, and finger pressure all affect accuracy more
 // than they would on a dedicated pulse oximeter.
+const BEAT_WINDOW = 10; // how many recent beats we keep
+const STABILITY_WINDOW = 6; // how many of the most recent beats must agree
+const STABILITY_CV_THRESHOLD = 0.08; // <8% coefficient of variation = "agree"
+const CONSECUTIVE_GOOD_BEATS_REQUIRED = 3; // ...and stay that consistent for this many beats in a row
+const MIN_ELAPSED_MS_FOR_STABILITY = 6000; // don't declare stable too early
+const MAX_READING_MS = 30000; // give up after this long either way
+
 class CameraHR {
-  constructor({ onSample, onBeat, onBpm }) {
+  constructor({ onSample, onBpm, onStable, onTimeout }) {
     this.stream = null;
     this.video = null;
     this.canvas = document.createElement("canvas");
@@ -27,10 +43,15 @@ class CameraHR {
     this.baseline = null;
     this.rising = false;
     this.lastBeat = 0;
+    this.startTime = 0;
     this.intervals = [];
+    this.stableFired = false;
+    this.timedOut = false;
+    this.consecutiveGood = 0;
     this.onSample = onSample;
-    this.onBeat = onBeat;
     this.onBpm = onBpm;
+    this.onStable = onStable;
+    this.onTimeout = onTimeout;
     this._raf = this._raf.bind(this);
   }
 
@@ -59,6 +80,10 @@ class CameraHR {
     this.rising = false;
     this.intervals = [];
     this.lastBeat = 0;
+    this.startTime = performance.now();
+    this.stableFired = false;
+    this.timedOut = false;
+    this.consecutiveGood = 0;
     this.running = true;
     this._raf();
   }
@@ -73,6 +98,10 @@ class CameraHR {
       for (let i = 0; i < frame.length; i += 4) sum += frame[i]; // red channel
       const avg = sum / n;
       this._processSample(avg);
+    }
+    if (!this.stableFired && !this.timedOut && performance.now() - this.startTime > MAX_READING_MS) {
+      this.timedOut = true;
+      if (this.onTimeout) this.onTimeout();
     }
     requestAnimationFrame(this._raf);
   }
@@ -89,17 +118,45 @@ class CameraHR {
       this.rising = true;
       if (this.lastBeat && now - this.lastBeat > 300 && now - this.lastBeat < 2000) {
         this.intervals.push(now - this.lastBeat);
-        if (this.intervals.length > 8) this.intervals.shift();
-        if (this.onBeat) this.onBeat();
-        if (this.intervals.length >= 3) {
-          const avgMs = this.intervals.reduce((a, b) => a + b, 0) / this.intervals.length;
-          const bpm = Math.round(60000 / avgMs);
-          if (bpm >= 35 && bpm <= 200 && this.onBpm) this.onBpm(bpm);
-        }
+        if (this.intervals.length > BEAT_WINDOW) this.intervals.shift();
+        this._evaluate(now);
       }
       this.lastBeat = now;
     } else if (this.rising && deviation < threshold * 0.2) {
       this.rising = false;
+    }
+  }
+
+  // Smooth the displayed BPM over a rolling window of beats, and separately
+  // check whether that window is consistent enough to call the reading done.
+  //
+  // A single low-variance window isn't proof of a good signal — with enough
+  // random noise, a "lucky" window of a few beats that happen to land close
+  // together will turn up by chance even during a genuinely bad read. So
+  // this requires the window to look good for several beats *in a row*
+  // (CONSECUTIVE_GOOD_BEATS_REQUIRED), not just once — noise breaks that
+  // streak almost immediately, while a real, settled pulse keeps meeting it.
+  _evaluate(now) {
+    if (this.intervals.length < 3) return;
+    const window = this.intervals.slice(-STABILITY_WINDOW);
+    const avgMs = window.reduce((a, b) => a + b, 0) / window.length;
+    const bpm = Math.round(60000 / avgMs);
+    if (bpm < 35 || bpm > 200) return; // garbage sample — skip it
+
+    if (this.onBpm) this.onBpm(bpm);
+
+    if (this.stableFired || window.length < STABILITY_WINDOW || now - this.startTime < MIN_ELAPSED_MS_FOR_STABILITY) return;
+
+    const variance = window.reduce((a, b) => a + (b - avgMs) ** 2, 0) / window.length;
+    const cv = Math.sqrt(variance) / avgMs; // coefficient of variation
+    if (cv < STABILITY_CV_THRESHOLD) {
+      this.consecutiveGood++;
+      if (this.consecutiveGood >= CONSECUTIVE_GOOD_BEATS_REQUIRED) {
+        this.stableFired = true;
+        if (this.onStable) this.onStable(bpm);
+      }
+    } else {
+      this.consecutiveGood = 0;
     }
   }
 
@@ -144,6 +201,8 @@ export function renderHeartRateView(container) {
               Your phone's rear camera is right next to its flash (the little LED used for photos). Covering both with your fingertip lets the app watch tiny changes in how much light comes through your finger — with each heartbeat, a fresh pulse of blood arrives and briefly changes how much light gets through. The app is just counting that flicker.
               <br><br>
               On many Android phones the app can turn the flash on for you automatically, which works best. On iPhones, Safari usually won't let a website control the flash — if you don't feel warmth/light from the flash turning on, do this in a well-lit room or near a lamp instead, still covering the lens with your finger. Keep your hand still and relaxed; movement is the most common reason a reading fails.
+              <br><br>
+              The bpm number is a rolling average of several recent heartbeats, not a single beat-to-beat guess, so it may drift a bit at first — that's normal. Once several beats in a row land close together, the app calls it a "stable" reading, tells you, and stops on its own so you're not left staring at the screen. If it can't settle down within 30 seconds, it stops anyway and lets you know.
             </p>
           </details>
         </div>
@@ -231,6 +290,27 @@ export function renderHeartRateView(container) {
       liveValueEl.textContent = `${bpm} bpm`;
       saveBtn.disabled = false;
     },
+    onStable: (bpm) => {
+      latestBpm = bpm;
+      liveValueEl.textContent = `${bpm} bpm`;
+      camera.stop();
+      wrap.classList.remove("reading");
+      wrap.classList.add("stable");
+      startBtn.disabled = false;
+      stopBtn.disabled = true;
+      saveBtn.disabled = false;
+      noteEl.textContent = `✓ Stable reading — steady around ${bpm} bpm. Tap "Save reading" to log it, or "Start reading" again for a fresh read.`;
+      showToast(`Stable reading: ${bpm} bpm`);
+    },
+    onTimeout: () => {
+      camera.stop();
+      wrap.classList.remove("reading");
+      startBtn.disabled = false;
+      stopBtn.disabled = true;
+      noteEl.textContent = latestBpm
+        ? `Reading didn't fully settle in 30s — last estimate was ${latestBpm} bpm. You can save it, or try again holding very still with steady, even pressure.`
+        : `Couldn't get a steady reading in 30 seconds. Try again with your fingertip flat and still over the lens — light or uneven pressure is the most common cause.`;
+    },
   });
 
   function drawWave() {
@@ -250,11 +330,12 @@ export function renderHeartRateView(container) {
       latestBpm = null;
       waveBuffer = [];
       saveBtn.disabled = true;
+      wrap.classList.remove("stable");
       await camera.start(video);
       wrap.classList.add("reading");
       startBtn.disabled = true;
       stopBtn.disabled = false;
-      noteEl.textContent = "Hold still. Reading updates as your pulse is detected…";
+      noteEl.textContent = "Hold still — averaging your pulse over several beats. This will notify you and stop on its own once the reading is steady (up to ~30 seconds).";
     } catch (err) {
       noteEl.textContent = "Couldn't access the camera (" + err.message + "). You can still log a reading manually.";
       liveValueEl.textContent = "— bpm";
@@ -267,7 +348,7 @@ export function renderHeartRateView(container) {
     startBtn.disabled = false;
     stopBtn.disabled = true;
     noteEl.textContent = latestBpm
-      ? "Reading stopped — save it below, or start again for a fresh read."
+      ? "Reading stopped before it fully settled — you can still save it below, or start again for a steadier read."
       : "Stopped before a steady reading — try again, holding very still.";
   });
 

@@ -588,6 +588,15 @@ h1, h2, h3, h4 { font-weight: 650; }
   animation: pulse-ring 1s ease-in-out infinite;
 }
 
+.camera-preview-wrap.stable::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 3px solid var(--good);
+  border-radius: 12px;
+  opacity: 0.9;
+}
+
 @keyframes pulse-ring {
   0%, 100% { opacity: 0.35; }
   50% { opacity: 0.9; }
