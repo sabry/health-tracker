@@ -8,9 +8,11 @@ import { renderHeartRateView } from "./heartrate.js";
 import { renderScreeningsView } from "./screenings.js";
 import { renderMealsView } from "./meals.js";
 
-// Update this (date + time) whenever the app's files change, so the
-// footer's "Last updated" reflects the actual edit, not just the day.
-const BUILD_TIME = "Aug 15, 2026, 9:20 AM ET";
+// Update this (date + time) whenever the app's code changes, so the
+// footer's "App last updated" reflects the actual edit — this is a fixed
+// marker of when the code was last shipped, not a live clock, so it will
+// NOT change on its own just from reloading the page.
+const BUILD_TIME = "Aug 15, 2026, 5:40 PM ET";
 
 const TABS = [
   { id: "today", label: "Today", icon: "🏠", render: (el) => renderDashboard(el, goToTab) },
