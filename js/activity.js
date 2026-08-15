@@ -1,6 +1,6 @@
-import { getActivityLog, upsertActivityForDay, addWalkSession, deleteActivityEntry, saveProfile } from "./storage.js";
+import { getActivityLog, upsertActivityForDay, addWalkSession, deleteActivityEntry, saveProfile, getWeightLog } from "./storage.js";
 import { currentProfile } from "./profile.js";
-import { todayISO, daysAgoISO, formatDateShort, round, weekStartISO } from "./util.js";
+import { todayISO, daysAgoISO, formatDateShort, round, weekStartISO, estimateWalkingCalories } from "./util.js";
 import { renderBarChart } from "./charts.js";
 import { showToast, requestWakeLock, releaseWakeLock, formatClock } from "./ui.js";
 
@@ -318,23 +318,25 @@ export function renderActivityView(container) {
 
     // History list
     const listEl = container.querySelector("#activity-log-list");
+    const weightKg = getWeightLog()[0]?.kg;
     if (!log.length) {
       listEl.innerHTML = `<li class="log-empty">Nothing logged yet.</li>`;
     } else {
       listEl.innerHTML = log
         .slice()
         .sort((a, b) => (a.dateISO < b.dateISO ? 1 : -1))
-        .map(
-          (e) => `
+        .map((e) => {
+          const kcal = weightKg ? round(estimateWalkingCalories({ steps: e.steps || 0, activeMinutes: e.activeMinutes || 0, weightKg }), 0) : null;
+          return `
         <li class="log-item">
           <div class="log-main">
             <span class="log-value">${(e.steps || 0).toLocaleString()} steps</span>
-            <span class="log-note">${round(e.activeMinutes || 0, 0)} min</span>
+            <span class="log-note">${round(e.activeMinutes || 0, 0)} min${kcal ? ` · ~${kcal} kcal` : ""}</span>
             <span class="log-date">${formatDateShort(e.dateISO)} ${e.source === "sensor" ? "· sensor" : "· manual"}</span>
           </div>
           <button class="log-del" data-id="${e.id}" title="Delete">✕</button>
-        </li>`
-        )
+        </li>`;
+        })
         .join("");
       listEl.querySelectorAll(".log-del").forEach((btn) => {
         btn.addEventListener("click", () => {

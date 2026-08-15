@@ -10,7 +10,7 @@ import { renderMealsView } from "./meals.js";
 
 // Update this (date + time) whenever the app's files change, so the
 // footer's "Last updated" reflects the actual edit, not just the day.
-const BUILD_TIME = "Aug 15, 2026, 8:40 AM ET";
+const BUILD_TIME = "Aug 15, 2026, 9:20 AM ET";
 
 const TABS = [
   { id: "today", label: "Today", icon: "🏠", render: (el) => renderDashboard(el, goToTab) },

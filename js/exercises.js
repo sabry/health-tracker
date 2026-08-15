@@ -1,5 +1,5 @@
-import { getExerciseLog, addExerciseEntry, deleteExerciseEntry } from "./storage.js";
-import { todayISO, formatDateShort, formatDateTime, escapeHtml } from "./util.js";
+import { getExerciseLog, addExerciseEntry, deleteExerciseEntry, getWeightLog } from "./storage.js";
+import { todayISO, formatDateShort, formatDateTime, escapeHtml, round } from "./util.js";
 import { showToast, requestWakeLock, releaseWakeLock, formatClock } from "./ui.js";
 
 // Reference ranges below are general fitness guidelines gathered from
@@ -9,7 +9,7 @@ import { showToast, requestWakeLock, releaseWakeLock, formatClock } from "./ui.j
 // clinical assessment — form and consistency matter more than hitting a
 // band, and anyone with joint pain, dizziness, or heart/lung conditions
 // should check with a doctor before pushing hard on these.
-const EXERCISES = [
+export const EXERCISES = [
   {
     id: "pushups",
     name: "Push-ups",
@@ -18,6 +18,7 @@ const EXERCISES = [
     description: "Standard or knee/incline push-ups, to near failure with good form (chest to ~90°, no sagging hips).",
     howTo: "Hands shoulder-width, body in a straight line. Lower until elbows hit ~90°, push back up. Use an incline (counter, wall) or knees if needed — still counts.",
     hasTimer: false,
+    met: 8.0,
     normTable: [
       { band: "Building up", range: "0–5", min: 0, max: 5, tone: "warn" },
       { band: "Average", range: "6–11", min: 6, max: 11, tone: "neutral" },
@@ -35,6 +36,7 @@ const EXERCISES = [
     hasTimer: true,
     timerLabel: "60-second sit-up test",
     suggestedSeconds: 60,
+    met: 8.0,
     normTable: [
       { band: "Building up", range: "0–7", min: 0, max: 7, tone: "warn" },
       { band: "Average", range: "8–12", min: 8, max: 12, tone: "neutral" },
@@ -52,6 +54,7 @@ const EXERCISES = [
     hasTimer: true,
     timerLabel: "30-second chair-stand test",
     suggestedSeconds: 30,
+    met: 5.0,
     normTable: [
       { band: "Below average", range: "0–11", min: 0, max: 11, tone: "warn" },
       { band: "Average", range: "12–13", min: 12, max: 13, tone: "neutral" },
@@ -69,6 +72,7 @@ const EXERCISES = [
     howTo: "Stand near a wall or counter the first few times, just in case. Lift one foot, start the timer, stop it the moment you touch down, hop, or grab support. Log each leg separately below — the target time is the same for both legs, but a big gap between your left and right (more than a few seconds) is itself worth noticing, since it often points to one side being weaker or a past injury still affecting balance.",
     hasTimer: true,
     timerLabel: "One-foot balance hold",
+    met: 2.0,
     normTable: [
       { band: "Building up", range: "<10s", min: 0, max: 9, tone: "warn" },
       { band: "Average", range: "10–19s", min: 10, max: 19, tone: "neutral" },
@@ -85,6 +89,7 @@ const EXERCISES = [
     howTo: "Elbows under shoulders, glutes and abs engaged, don't let hips sag or pike up. Hold until form breaks.",
     hasTimer: true,
     timerLabel: "Plank hold",
+    met: 3.5,
     normTable: [
       { band: "Building up", range: "<20s", min: 0, max: 19, tone: "warn" },
       { band: "Solid start", range: "20–44s", min: 20, max: 44, tone: "neutral" },
@@ -101,6 +106,7 @@ const EXERCISES = [
     howTo: "Slide down the wall until thighs are roughly parallel to the ground. Hold, keep weight through your heels.",
     hasTimer: true,
     timerLabel: "Wall sit hold",
+    met: 3.0,
     normTable: [
       { band: "Building up", range: "<20s", min: 0, max: 19, tone: "warn" },
       { band: "Solid start", range: "20–44s", min: 20, max: 44, tone: "neutral" },
@@ -116,6 +122,7 @@ const EXERCISES = [
     description: "Rise onto the balls of both feet, pause, lower with control. Hold a counter for balance if needed.",
     howTo: "Slow and controlled beats fast — 2 seconds up, pause, 2 seconds down. Builds ankle stability, which helps balance too.",
     hasTimer: false,
+    met: 3.0,
     normTable: [
       { band: "Building up", range: "<10", min: 0, max: 9, tone: "warn" },
       { band: "Good", range: "10–19", min: 10, max: 19, tone: "good" },
@@ -130,9 +137,36 @@ const EXERCISES = [
     description: "Hamstrings, calves, hip flexors, shoulders, low back — hold each stretch 20–30 seconds, no bouncing.",
     howTo: "Best after a short warm-up or at the end of a session, while muscles are warm. Breathe through it, ease off if anything sharp shows up.",
     hasTimer: false,
+    met: 2.5,
     normTable: [],
   },
 ];
+
+// Rough MET-based calorie estimate for one logged exercise entry (ACSM
+// formula: kcal = MET x 3.5 x kg / 200 x minutes). Duration is derived from
+// what's actually logged: a direct time for seconds/minutes exercises, the
+// test's fixed duration for the timed sit-up/chair-stand tests (the value
+// logged there is a rep count *within* that fixed window, not a duration),
+// or an assumed ~3 seconds per rep (~4s for slower calf raises) for the
+// other rep-counted exercises. Approximate, not a measurement — actual
+// effort varies with pace, bodyweight distribution, and form.
+export function estimateExerciseCalories(entry, weightKg) {
+  const ex = EXERCISES.find((x) => x.id === entry.exerciseId);
+  if (!ex || !ex.met || !weightKg || entry.value == null) return 0;
+  let minutes;
+  if (ex.hasTimer && ex.suggestedSeconds) {
+    minutes = ex.suggestedSeconds / 60;
+  } else if (ex.unit === "seconds") {
+    minutes = entry.value / 60;
+  } else if (ex.unit === "minutes") {
+    minutes = entry.value;
+  } else {
+    const secPerRep = ex.id === "calf-raises" ? 4 : 3;
+    minutes = (entry.value * secPerRep) / 60;
+  }
+  if (!minutes) return 0;
+  return ((ex.met * 3.5 * weightKg) / 200) * minutes;
+}
 
 function getBand(exercise, value) {
   if (value == null || !exercise.normTable.length) return null;
@@ -267,14 +301,17 @@ export function renderExercisesView(container) {
       listEl.innerHTML = `<li class="log-empty">Nothing logged yet — log a set from any card above.</li>`;
       return;
     }
+    const weightKg = getWeightLog()[0]?.kg;
     listEl.innerHTML = log
       .slice(0, 40)
       .map((e) => {
         const ex = EXERCISES.find((x) => x.id === e.exerciseId);
+        const kcal = weightKg ? round(estimateExerciseCalories(e, weightKg), 0) : null;
         return `
       <li class="log-item">
         <div class="log-main">
           <span class="log-value">${escapeHtml(ex ? ex.name : e.exerciseId)}${e.side ? ` (${e.side})` : ""}: ${e.value}</span>
+          <span class="log-note">${kcal ? `~${kcal} kcal` : ""}</span>
           <span class="log-date">${formatDateTime(e.createdAt || Date.now())}</span>
         </div>
         <button class="log-del" data-id="${e.id}" title="Delete">✕</button>

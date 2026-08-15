@@ -101,6 +101,21 @@ export function estimateDailyCalorieTarget({ kg, cm, age, sex, activityFactor = 
   return Math.round(bmr * activityFactor);
 }
 
+// Rough MET-based calorie estimate for walking: kcal = MET x 3.5 x kg / 200 x
+// minutes (the standard ACSM formula). Uses tracked active minutes when
+// available; if only a step count was logged (e.g. manual entry with no
+// minutes), falls back to assuming a ~100 steps/minute walking cadence —
+// a commonly used estimate for an average adult pace — to derive minutes.
+// MET 3.5 is a moderate ("normal pace") walk; this is a ballpark, not a
+// measurement, since actual effort varies with pace, terrain, and incline.
+export function estimateWalkingCalories({ steps = 0, activeMinutes = 0, weightKg }) {
+  if (!weightKg) return 0;
+  const MET_WALK = 3.5;
+  const minutes = activeMinutes > 0 ? activeMinutes : steps > 0 ? steps / 100 : 0;
+  if (!minutes) return 0;
+  return ((MET_WALK * 3.5 * weightKg) / 200) * minutes;
+}
+
 // Tanaka et al. (2001) age-predicted max heart rate — tracks better than
 // 220-age for older adults.
 export function hrMax(age) {

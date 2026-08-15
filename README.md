@@ -17,7 +17,9 @@ and offline.
 ## Features
 
 - **Today** — a dashboard pulling together your latest weight/BMI, today's
-  steps, exercise streak, resting heart rate, and blood pressure.
+  steps, exercise streak, resting heart rate, blood pressure, calories eaten,
+  and an estimate of calories burned today from walking and home exercises
+  (see "Estimated calories burned" below for how that's calculated).
 - **Weight & BMI** — log weigh-ins, see BMI and category, a 90-day trend
   chart, and 7/30-day deltas.
 - **Vitals** — blood pressure (with AHA category), waist circumference, and
@@ -98,6 +100,33 @@ Two practical consequences:
   Connect app (Android) at the end of the day and enter that total in
   Activity → "Log activity manually." That's the only reliable way to get a
   true all-day count without turning this into a native app.
+
+## Estimated calories burned
+
+The Today dashboard shows a rough estimate of calories burned so far today
+from walking (Activity) and home exercises (Exercises), broken out as
+🚶 walking · 💪 exercise. This needs a logged weight to scale against — it
+won't show a number until you've logged one in the Weight tab.
+
+The math is the standard ACSM MET formula also used by most fitness
+trackers: `kcal = MET × 3.5 × your weight in kg ÷ 200 × minutes`. Each
+activity type is assigned a MET (metabolic equivalent) value from general
+published tables — e.g. push-ups/sit-ups ≈ 8 METs, chair-stand/squats ≈ 5,
+plank ≈ 3.5, moderate walking ≈ 3.5. Duration comes from what you actually
+logged: a direct time for timed exercises (plank, wall sit, balance,
+stretching) and tracked active minutes for walking; for rep-counted
+exercises without a timer (push-ups, calf raises) it assumes roughly 3
+seconds per rep (4s for calf raises); for the two fixed-length tests
+(60-second sit-up test, 30-second chair-stand test) it uses that test's
+actual duration, not the rep count. If a walking day only has a step count
+and no tracked minutes (e.g. manual entry), it assumes roughly 100
+steps/minute to estimate duration.
+
+Treat these numbers as a ballpark for spotting trends, not a precise
+measurement — actual calorie burn depends on pace, effort, incline, and
+individual body composition in ways a MET table can't capture. The same
+`estimateExerciseCalories`/`estimateWalkingCalories` helpers also annotate
+individual entries in the Activity and Exercises history lists.
 
 ## AI meal photo analysis — read before turning this on
 

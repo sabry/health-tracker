@@ -2,9 +2,10 @@ import { getWeightLog, getVitalsLog, getActivityLog, getExerciseLog, getHrLog, g
 import { currentProfile } from "./profile.js";
 import {
   bmi, bmiCategory, restingHrCategory, bpCategory, round, todayISO, daysAgoISO,
-  formatDateShort, ageFromDOB,
+  formatDateShort, ageFromDOB, estimateWalkingCalories,
 } from "./util.js";
 import { DEFAULT_STEP_GOAL } from "./activity.js";
+import { estimateExerciseCalories } from "./exercises.js";
 
 function exerciseStreak() {
   const log = getExerciseLog();
@@ -65,6 +66,18 @@ export function renderDashboard(container, goToTab) {
   const calorieGoal = profile.calorieGoal;
   const caloriePct = calorieGoal ? Math.min(100, Math.round((todayCalories / calorieGoal) * 100)) : null;
 
+  // Rough MET-based estimate of calories burned today from walking + home
+  // exercises (see estimateWalkingCalories / estimateExerciseCalories) —
+  // needs a logged weight to scale against, same as the calorie target.
+  const weightKg = latestWeight ? latestWeight.kg : null;
+  const todayExercises = getExerciseLog().filter((e) => e.dateISO === todayISO());
+  const walkCalories = weightKg
+    ? estimateWalkingCalories({ steps, activeMinutes: todayActivity ? todayActivity.activeMinutes || 0 : 0, weightKg })
+    : 0;
+  const exerciseCalories = weightKg ? todayExercises.reduce((sum, e) => sum + estimateExerciseCalories(e, weightKg), 0) : 0;
+  const burnedCalories = Math.round(walkCalories + exerciseCalories);
+  const hasBurnData = weightKg != null && (steps > 0 || (todayActivity && todayActivity.activeMinutes > 0) || todayExercises.length > 0);
+
   container.innerHTML = `
     <div class="view-header">
       <h2>Today</h2>
@@ -102,9 +115,15 @@ export function renderDashboard(container, goToTab) {
       </div>
 
       <div class="stat-tile ${todayMeals.length ? "" : "empty"}" data-goto="meals">
-        <div class="stat-label">Calories today</div>
+        <div class="stat-label">Calories eaten</div>
         <div class="stat-value">${todayMeals.length ? `${todayCalories}${calorieGoal ? `<span class="unit">/ ${calorieGoal}</span>` : ""}` : "Log a meal →"}</div>
         ${caloriePct != null ? `<div class="progress-bar-track" style="margin-top:0.4rem;"><div class="progress-bar-fill ${caloriePct >= 100 ? "over" : ""}" style="width:${caloriePct}%"></div></div>` : ""}
+      </div>
+
+      <div class="stat-tile ${hasBurnData ? "accent-good" : "empty"}" data-goto="activity">
+        <div class="stat-label">Calories burned (est.)</div>
+        <div class="stat-value">${hasBurnData ? `${burnedCalories}<span class="unit">kcal</span>` : weightKg ? "Log activity →" : "Log weight →"}</div>
+        <div class="stat-sub">${hasBurnData ? `🚶 ${Math.round(walkCalories)} walking · 💪 ${Math.round(exerciseCalories)} exercise` : "From walking + home exercises"}</div>
       </div>
     </div>
 
@@ -115,7 +134,7 @@ export function renderDashboard(container, goToTab) {
       </p>
     </div>
 
-    <p class="disclaimer">Personal tracking only — not medical advice. See Profile for details.</p>
+    <p class="disclaimer">Personal tracking only — not medical advice. See Profile for details. "Calories burned" is a rough MET-based estimate from your logged steps/minutes and exercises scaled by your latest weight, not a measurement — actual burn varies with pace, effort, and body composition.</p>
   `;
 
   container.querySelectorAll("[data-goto]").forEach((tile) => {
