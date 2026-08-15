@@ -1,0 +1,111 @@
+// A small bundled reference table of common foods with well-established
+// nutrition values, so logging something ordinary ("banana," "chicken
+// breast," "white rice") doesn't require knowing or looking up its calorie
+// count — pick it from the list (or just type the exact name) and the
+// manual-entry form fills in calories/protein/carbs/fat for you, scaled by
+// however many servings you had. Values are per the listed portion, rounded
+// to typical/generic figures (USDA-ish ballpark) — a real banana varies by
+// size, a real chicken breast by cut, etc., so treat these as reasonable
+// defaults you can still edit, not exact measurements. Not exhaustive on
+// purpose — for anything not here, just type the name and enter values
+// manually. Add more rows below any time; each just needs name/portion/
+// calories/proteinG/carbsG/fatG.
+
+export const COMMON_FOODS = [
+  // ---- Fruit ----
+  { name: "Banana (medium)", portion: "1 medium (118g)", calories: 105, proteinG: 1.3, carbsG: 27, fatG: 0.4 },
+  { name: "Apple (medium)", portion: "1 medium (182g)", calories: 95, proteinG: 0.5, carbsG: 25, fatG: 0.3 },
+  { name: "Orange (medium)", portion: "1 medium (131g)", calories: 62, proteinG: 1.2, carbsG: 15, fatG: 0.2 },
+  { name: "Grapes", portion: "1 cup (151g)", calories: 104, proteinG: 1.1, carbsG: 27, fatG: 0.2 },
+  { name: "Strawberries", portion: "1 cup sliced (166g)", calories: 53, proteinG: 1.1, carbsG: 13, fatG: 0.5 },
+  { name: "Blueberries", portion: "1 cup (148g)", calories: 84, proteinG: 1.1, carbsG: 21, fatG: 0.5 },
+  { name: "Watermelon", portion: "1 cup diced (152g)", calories: 46, proteinG: 0.9, carbsG: 11, fatG: 0.2 },
+  { name: "Pear (medium)", portion: "1 medium (178g)", calories: 101, proteinG: 0.6, carbsG: 27, fatG: 0.2 },
+  { name: "Peach (medium)", portion: "1 medium (150g)", calories: 58, proteinG: 1.4, carbsG: 14, fatG: 0.4 },
+  { name: "Mango", portion: "1 cup sliced (165g)", calories: 99, proteinG: 1.4, carbsG: 25, fatG: 0.6 },
+  { name: "Pineapple", portion: "1 cup chunks (165g)", calories: 82, proteinG: 0.9, carbsG: 22, fatG: 0.2 },
+  { name: "Avocado", portion: "1/2 medium (100g)", calories: 160, proteinG: 2, carbsG: 8.5, fatG: 15 },
+
+  // ---- Vegetables ----
+  { name: "Broccoli, steamed", portion: "1 cup (156g)", calories: 55, proteinG: 3.7, carbsG: 11, fatG: 0.6 },
+  { name: "Carrot (medium)", portion: "1 medium (61g)", calories: 25, proteinG: 0.6, carbsG: 6, fatG: 0.1 },
+  { name: "Spinach, raw", portion: "1 cup (30g)", calories: 7, proteinG: 0.9, carbsG: 1.1, fatG: 0.1 },
+  { name: "Sweet potato, baked", portion: "1 medium (114g)", calories: 103, proteinG: 2.3, carbsG: 24, fatG: 0.2 },
+  { name: "Potato, baked (with skin)", portion: "1 medium (173g)", calories: 161, proteinG: 4.3, carbsG: 37, fatG: 0.2 },
+  { name: "Tomato (medium)", portion: "1 medium (123g)", calories: 22, proteinG: 1.1, carbsG: 4.8, fatG: 0.2 },
+  { name: "Cucumber", portion: "1 cup sliced (119g)", calories: 16, proteinG: 0.7, carbsG: 3.8, fatG: 0.1 },
+  { name: "Bell pepper", portion: "1 cup sliced (149g)", calories: 39, proteinG: 1.5, carbsG: 9, fatG: 0.4 },
+  { name: "Corn, cooked", portion: "1 cup (154g)", calories: 143, proteinG: 5.4, carbsG: 31, fatG: 2.2 },
+  { name: "Green beans, cooked", portion: "1 cup (125g)", calories: 44, proteinG: 2.4, carbsG: 10, fatG: 0.4 },
+  { name: "Mixed salad greens", portion: "2 cups (60g)", calories: 15, proteinG: 1.2, carbsG: 3, fatG: 0.2 },
+
+  // ---- Protein ----
+  { name: "Chicken breast, grilled (skinless)", portion: "4 oz (113g)", calories: 187, proteinG: 35, carbsG: 0, fatG: 4 },
+  { name: "Chicken thigh, roasted (skinless)", portion: "4 oz (113g)", calories: 209, proteinG: 26, carbsG: 0, fatG: 11 },
+  { name: "Salmon, baked", portion: "4 oz (113g)", calories: 233, proteinG: 25, carbsG: 0, fatG: 14 },
+  { name: "Tuna, canned in water", portion: "3 oz (85g)", calories: 99, proteinG: 22, carbsG: 0, fatG: 0.7 },
+  { name: "Ground beef, 90/10, cooked", portion: "4 oz (113g)", calories: 218, proteinG: 25, carbsG: 0, fatG: 12 },
+  { name: "Egg, large", portion: "1 egg (50g)", calories: 72, proteinG: 6.3, carbsG: 0.4, fatG: 4.8 },
+  { name: "Egg whites", portion: "1/2 cup (121g)", calories: 63, proteinG: 13, carbsG: 0.9, fatG: 0.2 },
+  { name: "Tofu, firm", portion: "1/2 cup (126g)", calories: 94, proteinG: 10, carbsG: 2.3, fatG: 6 },
+  { name: "Black beans, cooked", portion: "1 cup (172g)", calories: 227, proteinG: 15, carbsG: 41, fatG: 0.9 },
+  { name: "Chickpeas, cooked", portion: "1 cup (164g)", calories: 269, proteinG: 15, carbsG: 45, fatG: 4.3 },
+  { name: "Lentils, cooked", portion: "1 cup (198g)", calories: 230, proteinG: 18, carbsG: 40, fatG: 0.8 },
+  { name: "Shrimp, cooked", portion: "4 oz (113g)", calories: 112, proteinG: 24, carbsG: 0.4, fatG: 1.2 },
+  { name: "Turkey breast, roasted", portion: "4 oz (113g)", calories: 153, proteinG: 34, carbsG: 0, fatG: 1 },
+  { name: "Bacon", portion: "2 slices (16g)", calories: 72, proteinG: 5, carbsG: 0.2, fatG: 5.5 },
+  { name: "Pork chop, grilled", portion: "4 oz (113g)", calories: 210, proteinG: 30, carbsG: 0, fatG: 9 },
+
+  // ---- Dairy ----
+  { name: "Milk, whole", portion: "1 cup (244g)", calories: 149, proteinG: 8, carbsG: 12, fatG: 8 },
+  { name: "Milk, skim", portion: "1 cup (245g)", calories: 83, proteinG: 8.3, carbsG: 12, fatG: 0.2 },
+  { name: "Greek yogurt, plain nonfat", portion: "1 cup (245g)", calories: 133, proteinG: 23, carbsG: 9, fatG: 0.7 },
+  { name: "Cheddar cheese", portion: "1 oz (28g)", calories: 115, proteinG: 7, carbsG: 0.4, fatG: 9.5 },
+  { name: "Mozzarella, part-skim", portion: "1 oz (28g)", calories: 72, proteinG: 6.9, carbsG: 0.8, fatG: 4.5 },
+  { name: "Cottage cheese, low-fat", portion: "1 cup (226g)", calories: 163, proteinG: 28, carbsG: 6.2, fatG: 2.3 },
+  { name: "Butter", portion: "1 tbsp (14g)", calories: 102, proteinG: 0.1, carbsG: 0, fatG: 11.5 },
+
+  // ---- Grains & carbs ----
+  { name: "White rice, cooked", portion: "1 cup (158g)", calories: 205, proteinG: 4.3, carbsG: 45, fatG: 0.4 },
+  { name: "Brown rice, cooked", portion: "1 cup (195g)", calories: 216, proteinG: 5, carbsG: 45, fatG: 1.8 },
+  { name: "Quinoa, cooked", portion: "1 cup (185g)", calories: 222, proteinG: 8, carbsG: 39, fatG: 3.6 },
+  { name: "Oatmeal, cooked (water)", portion: "1 cup (234g)", calories: 166, proteinG: 5.9, carbsG: 28, fatG: 3.6 },
+  { name: "Whole wheat bread", portion: "1 slice (28g)", calories: 69, proteinG: 3.6, carbsG: 12, fatG: 1 },
+  { name: "White bread", portion: "1 slice (25g)", calories: 67, proteinG: 2, carbsG: 12.5, fatG: 0.8 },
+  { name: "Pasta, cooked", portion: "1 cup (140g)", calories: 221, proteinG: 8, carbsG: 43, fatG: 1.3 },
+  { name: "Bagel, plain", portion: "1 medium (98g)", calories: 245, proteinG: 10, carbsG: 48, fatG: 1.5 },
+  { name: "Flour tortilla", portion: "1 medium (49g)", calories: 146, proteinG: 4, carbsG: 24, fatG: 3.6 },
+  { name: "Corn tortilla", portion: "1 small (24g)", calories: 52, proteinG: 1.4, carbsG: 11, fatG: 0.6 },
+
+  // ---- Nuts, seeds & fats ----
+  { name: "Almonds", portion: "1 oz / ~23 nuts (28g)", calories: 164, proteinG: 6, carbsG: 6.1, fatG: 14 },
+  { name: "Peanut butter", portion: "2 tbsp (32g)", calories: 188, proteinG: 8, carbsG: 6.9, fatG: 16 },
+  { name: "Walnuts", portion: "1 oz (28g)", calories: 185, proteinG: 4.3, carbsG: 3.9, fatG: 18.5 },
+  { name: "Olive oil", portion: "1 tbsp (14g)", calories: 119, proteinG: 0, carbsG: 0, fatG: 13.5 },
+
+  // ---- Snacks & other ----
+  { name: "Potato chips", portion: "1 oz / ~15 chips (28g)", calories: 152, proteinG: 2, carbsG: 15, fatG: 10 },
+  { name: "Pretzels", portion: "1 oz (28g)", calories: 108, proteinG: 2.6, carbsG: 22, fatG: 0.8 },
+  { name: "Popcorn, air-popped", portion: "3 cups (24g)", calories: 93, proteinG: 3, carbsG: 19, fatG: 1 },
+  { name: "Dark chocolate", portion: "1 oz (28g)", calories: 155, proteinG: 1.4, carbsG: 13, fatG: 11 },
+  { name: "Granola bar", portion: "1 bar (28g)", calories: 118, proteinG: 2.6, carbsG: 20, fatG: 4 },
+  { name: "Protein bar", portion: "1 bar (60g)", calories: 220, proteinG: 20, carbsG: 24, fatG: 7 },
+  { name: "Hummus", portion: "2 tbsp (30g)", calories: 70, proteinG: 2, carbsG: 6, fatG: 5 },
+
+  // ---- Beverages ----
+  { name: "Orange juice", portion: "1 cup (248g)", calories: 112, proteinG: 1.7, carbsG: 26, fatG: 0.5 },
+  { name: "Coffee, black", portion: "1 cup (240g)", calories: 2, proteinG: 0.3, carbsG: 0, fatG: 0 },
+  { name: "Latte, whole milk", portion: "12 oz (340g)", calories: 168, proteinG: 9, carbsG: 13, fatG: 9 },
+  { name: "Soda, regular", portion: "12 oz can (355g)", calories: 140, proteinG: 0, carbsG: 39, fatG: 0 },
+  { name: "Beer, regular", portion: "12 oz (355g)", calories: 153, proteinG: 1.6, carbsG: 13, fatG: 0 },
+  { name: "Wine, red or white", portion: "5 oz (147g)", calories: 125, proteinG: 0.1, carbsG: 4, fatG: 0 },
+
+  // ---- Common combined meals ----
+  { name: "Pizza, cheese slice", portion: "1 slice (107g)", calories: 285, proteinG: 12, carbsG: 36, fatG: 10 },
+  { name: "Hamburger, fast food", portion: "1 sandwich (110g)", calories: 295, proteinG: 15, carbsG: 27, fatG: 14 },
+  { name: "French fries, medium", portion: "1 medium order (117g)", calories: 365, proteinG: 4, carbsG: 48, fatG: 17 },
+  { name: "Chicken sandwich, fast food", portion: "1 sandwich (183g)", calories: 490, proteinG: 28, carbsG: 40, fatG: 24 },
+  { name: "Burrito, chicken & rice", portion: "1 burrito (300g)", calories: 550, proteinG: 30, carbsG: 65, fatG: 18 },
+  { name: "Sushi roll (California)", portion: "8 pieces (250g)", calories: 255, proteinG: 9, carbsG: 38, fatG: 7 },
+  { name: "Turkey sandwich, wheat bread", portion: "1 sandwich (200g)", calories: 320, proteinG: 24, carbsG: 36, fatG: 8 },
+];

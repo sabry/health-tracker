@@ -26,6 +26,11 @@ and offline.
   (`devicemotion`) while you walk with the app open, plus manual entry for
   days you tracked activity another way. Tracks a daily step goal and a
   weekly active-minutes goal (default 150 min/week, per CDC/AHA guidance).
+  Progress auto-saves every ~20 seconds and immediately if the screen locks
+  or the app is backgrounded, so an interrupted walk doesn't lose everything
+  — but counting itself still needs the screen on and the app in front the
+  whole time (see "Why the step counter needs the screen on" below, this
+  isn't fixable from a web app).
 - **Exercises** — push-ups, sit-ups, chair-stand/squats, standing one-foot
   balance, plank, wall sit, calf raises, and stretching, each with a short
   how-to and general reference bands (not clinical norms) for adults around
@@ -41,10 +46,13 @@ and offline.
   your own Anthropic API key, Claude identifies the food items and estimates
   calories/protein/carbs/fat for each — shown in an editable review table
   before anything is saved, so you can correct the AI's guesses. Manual
-  entry works with no API key needed. Tracks daily totals against an
-  optional calorie target (a rough Mifflin-St Jeor starting estimate you can
-  override) and a 30-day trend chart. See "AI meal photo analysis" below for
-  the privacy/cost details before turning this on.
+  entry works with no API key needed, and auto-fills calories/protein/carbs/
+  fat for ~80 common foods (start typing a name like "banana" and pick it
+  from the suggestions) scaled by however many servings you had — anything
+  not in the list still works, just enter the numbers yourself. Tracks daily
+  totals against an optional calorie target (a rough Mifflin-St Jeor
+  starting estimate you can override) and a 30-day trend chart. See "AI meal
+  photo analysis" below for the privacy/cost details before turning that on.
 - **Screenings** — a checklist of general USPSTF/CDC preventive-care
   guidance for a man in his early 60s (cholesterol, colorectal screening,
   vaccines, etc.), checkable and stored locally.
@@ -62,6 +70,34 @@ don't account for your individual history. Talk to your doctor about what
 actually applies to you, especially before starting a new exercise routine,
 and seek care promptly for chest pain, severe shortness of breath, fainting,
 or other concerning symptoms.
+
+## Why the step counter needs the screen on
+
+The Activity tab's live step counter can't run with the screen off or the
+app backgrounded, and no amount of extra code fixes that — it's a platform
+limit, not a bug. iOS discards a standalone PWA outright when you switch
+away from it or lock the screen; Android freezes its JavaScript. Neither
+lets a website keep listening to the accelerometer once you're not actively
+looking at it. This is true of every web app, not just this one — it's why
+dedicated fitness apps use step-counting APIs built into the phone's OS
+(Apple's Core Motion, Android's step-counter sensor), which only a native
+app can call, not a website.
+
+Two practical consequences:
+
+- **For a dedicated walk you're tracking on purpose:** keep the app open and
+  the screen on for that walk (the Wake Lock the app requests helps with
+  this). Progress auto-saves every ~20 seconds and immediately if the app
+  does get backgrounded, so an interruption loses at most the last ~20
+  seconds, not the whole walk — and if a walk never got a clean "Stop" (the
+  OS killed the app mid-walk), the app tells you how many steps were saved
+  the next time you open the Activity tab.
+- **For all-day step totals:** your phone is already counting steps in the
+  background 24/7 via its own hardware pedometer, completely independent of
+  this app — check the Health app (iPhone) or your phone's fitness/Health
+  Connect app (Android) at the end of the day and enter that total in
+  Activity → "Log activity manually." That's the only reliable way to get a
+  true all-day count without turning this into a native app.
 
 ## AI meal photo analysis — read before turning this on
 
@@ -151,7 +187,8 @@ health-tracker/
 │   ├── exercises.js        # exercise library, reference bands, stopwatch, log
 │   ├── heartrate.js        # manual HR log + camera PPG pulse reader
 │   ├── screenings.js       # preventive-care checklist
-│   └── meals.js            # camera food photo → Claude API analysis + manual meal log
+│   ├── meals.js            # camera food photo → Claude API analysis + manual meal log
+│   └── foodDatabase.js     # reference table of common foods for manual-entry auto-fill
 └── README.md
 ```
 
@@ -162,3 +199,8 @@ health-tracker/
 - Screening checklist items: edit the `ITEMS` array in `js/screenings.js`.
 - Heart-rate zones use the Tanaka formula (`208 − 0.7 × age`), computed in
   `js/util.js`'s `hrMax`/`hrZones`.
+- Common-foods auto-fill list: edit the `COMMON_FOODS` array in
+  `js/foodDatabase.js` — each entry just needs `name`, `portion`,
+  `calories`, `proteinG`, `carbsG`, `fatG`. It's a small, editable starting
+  set, not an exhaustive nutrition database; anything not listed still works
+  in Meals → manual entry, you just type the numbers yourself.

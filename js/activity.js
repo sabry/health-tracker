@@ -150,9 +150,25 @@ export function renderActivityView(container) {
   `;
 
   // ---- Live walk tracker ----
+  //
+  // A phone browser can't keep counting steps once the screen locks or the
+  // app is backgrounded — iOS discards a backgrounded standalone PWA
+  // outright, and Android freezes its JS. That's a platform limit, not
+  // something fixable from here. What IS fixable: not silently losing
+  // progress when that happens mid-walk. So this flushes counted steps to
+  // storage periodically and immediately on backgrounding, and leaves a
+  // marker that gets checked on next launch — if the app never got a clean
+  // "Stop", whatever was saved before the interruption is still there, and
+  // the person finds out rather than just losing the walk.
+  const ACTIVE_WALK_KEY = "healthtracker.activeWalkMarker";
+  const FLUSH_INTERVAL_MS = 20000;
+
   const pedometer = new Pedometer();
   let walkTimer = null;
+  let flushTimer = null;
   let walkStartTime = null;
+  let lastSavedSteps = 0;
+  let lastFlushTime = null;
 
   const stepsEl = container.querySelector("#walk-steps");
   const clockEl = container.querySelector("#walk-clock");
@@ -164,6 +180,39 @@ export function renderActivityView(container) {
     stepsEl.innerHTML = `${n}<span class="unit" style="font-size:1rem;"> steps</span>`;
   };
 
+  function flushProgress() {
+    if (!walkStartTime) return;
+    const now = Date.now();
+    const deltaSteps = pedometer.steps - lastSavedSteps;
+    const deltaMinutes = (now - lastFlushTime) / 60000;
+    if (deltaSteps > 0) {
+      addWalkSession(deltaSteps, deltaMinutes);
+      lastSavedSteps = pedometer.steps;
+      lastFlushTime = now;
+      localStorage.setItem(ACTIVE_WALK_KEY, JSON.stringify({ startedAt: walkStartTime, lastFlushAt: now, savedSteps: lastSavedSteps }));
+    }
+  }
+
+  function onVisibilityChange() {
+    if (document.visibilityState === "hidden" && walkStartTime) flushProgress();
+  }
+  document.addEventListener("visibilitychange", onVisibilityChange);
+  window.addEventListener("pagehide", flushProgress);
+
+  // If a previous walk never got a clean "Stop" (app was killed by the OS
+  // mid-walk), let the person know their progress up to that point is safe.
+  (function checkInterruptedWalk() {
+    const raw = localStorage.getItem(ACTIVE_WALK_KEY);
+    if (!raw) return;
+    try {
+      const marker = JSON.parse(raw);
+      if (marker.savedSteps > 0) {
+        showToast(`Your last walk was interrupted — ${marker.savedSteps} steps were already saved.`);
+      }
+    } catch (e) {}
+    localStorage.removeItem(ACTIVE_WALK_KEY);
+  })();
+
   startBtn.addEventListener("click", async () => {
     try {
       await pedometer.start();
@@ -172,13 +221,17 @@ export function renderActivityView(container) {
       return;
     }
     walkStartTime = Date.now();
+    lastSavedSteps = 0;
+    lastFlushTime = walkStartTime;
+    localStorage.setItem(ACTIVE_WALK_KEY, JSON.stringify({ startedAt: walkStartTime, lastFlushAt: walkStartTime, savedSteps: 0 }));
     requestWakeLock();
     startBtn.disabled = true;
     stopBtn.disabled = false;
-    noteEl.textContent = "Tracking… keep this tab open while you walk.";
+    noteEl.textContent = "Tracking… progress auto-saves every 20s, so a screen lock or interruption won't lose the whole walk — but counting itself still needs this screen open and the app in front.";
     walkTimer = setInterval(() => {
       clockEl.textContent = formatClock((Date.now() - walkStartTime) / 1000);
     }, 500);
+    flushTimer = setInterval(flushProgress, FLUSH_INTERVAL_MS);
     clockEl.classList.add("running");
   });
 
@@ -186,13 +239,15 @@ export function renderActivityView(container) {
     pedometer.stop();
     releaseWakeLock();
     clearInterval(walkTimer);
+    clearInterval(flushTimer);
     clockEl.classList.remove("running");
-    const elapsedMinutes = (Date.now() - walkStartTime) / 60000;
-    const steps = pedometer.steps;
-    if (steps > 0) {
-      addWalkSession(steps, elapsedMinutes);
-      showToast(`Saved ${steps} steps · ${round(elapsedMinutes, 1)} min`);
+    flushProgress(); // save whatever's accumulated since the last periodic flush
+    const totalSaved = lastSavedSteps;
+    localStorage.removeItem(ACTIVE_WALK_KEY);
+    if (totalSaved > 0) {
+      showToast(`Saved ${totalSaved} steps for this walk`);
     }
+    walkStartTime = null;
     startBtn.disabled = false;
     stopBtn.disabled = true;
     noteEl.textContent = "Uses your phone's accelerometer to count steps while this screen is open. Keep your phone in your hand or pocket and walk normally.";
@@ -291,4 +346,23 @@ export function renderActivityView(container) {
   }
 
   refresh();
+
+  // Called by the router when navigating away from this tab. Without this,
+  // the visibilitychange/pagehide listeners below would pile up on every
+  // visit to this tab, and a walk left running (no "Stop" tapped) would
+  // keep its accelerometer listener alive in the background indefinitely —
+  // and double-count steps if a second walk gets started later.
+  return function cleanup() {
+    document.removeEventListener("visibilitychange", onVisibilityChange);
+    window.removeEventListener("pagehide", flushProgress);
+    if (walkStartTime) {
+      pedometer.stop();
+      releaseWakeLock();
+      clearInterval(walkTimer);
+      clearInterval(flushTimer);
+      flushProgress();
+      localStorage.removeItem(ACTIVE_WALK_KEY);
+      walkStartTime = null;
+    }
+  };
 }

@@ -3,6 +3,7 @@ import { currentProfile } from "./profile.js";
 import { todayISO, formatDateShort, formatDateTime, round, estimateDailyCalorieTarget, escapeHtml, ageFromDOB } from "./util.js";
 import { renderLineChart } from "./charts.js";
 import { showToast } from "./ui.js";
+import { COMMON_FOODS } from "./foodDatabase.js";
 
 // ---------------- Camera meal-photo analyzer ----------------
 //
@@ -176,32 +177,41 @@ export function renderMealsView(container) {
 
     <div class="card">
       <h3>Log a meal manually</h3>
+      <p class="field hint" style="margin-top:-0.2rem;">Start typing a common food (e.g. "banana") and pick it from the suggestions — calories and macros fill in automatically, scaled by servings. Anything not in the list still works, just enter the numbers yourself.</p>
       <form id="meal-manual-form">
         <div class="form-grid">
           <div class="field" style="flex:2; min-width:200px;">
             <label for="mm-name">What did you eat</label>
-            <input type="text" id="mm-name" placeholder="e.g. chicken sandwich" required />
+            <input type="text" id="mm-name" list="mm-food-list" placeholder="e.g. chicken sandwich" required autocomplete="off" />
+            <datalist id="mm-food-list">
+              ${COMMON_FOODS.map((f) => `<option value="${escapeHtml(f.name)}"></option>`).join("")}
+            </datalist>
+          </div>
+          <div class="field" style="max-width:110px;">
+            <label for="mm-servings">Servings</label>
+            <input type="number" id="mm-servings" min="0.25" max="20" step="0.25" value="1" />
           </div>
           <div class="field">
             <label for="mm-cal">Calories</label>
-            <input type="number" id="mm-cal" min="0" max="5000" required placeholder="e.g. 450" />
+            <input type="number" id="mm-cal" min="0" max="5000" step="any" required placeholder="e.g. 450" />
           </div>
           <div class="field">
             <label for="mm-protein">Protein (g)</label>
-            <input type="number" id="mm-protein" min="0" max="400" placeholder="optional" />
+            <input type="number" id="mm-protein" min="0" max="400" step="any" placeholder="optional" />
           </div>
           <div class="field">
             <label for="mm-carbs">Carbs (g)</label>
-            <input type="number" id="mm-carbs" min="0" max="600" placeholder="optional" />
+            <input type="number" id="mm-carbs" min="0" max="600" step="any" placeholder="optional" />
           </div>
           <div class="field">
             <label for="mm-fat">Fat (g)</label>
-            <input type="number" id="mm-fat" min="0" max="300" placeholder="optional" />
+            <input type="number" id="mm-fat" min="0" max="300" step="any" placeholder="optional" />
           </div>
           <div class="field" style="min-width:auto;">
             <button type="submit" class="btn btn-primary">Log</button>
           </div>
         </div>
+        <p class="field hint" id="mm-match-hint" style="margin-top:0.5rem; display:none;"></p>
       </form>
     </div>
 
@@ -464,24 +474,63 @@ export function renderMealsView(container) {
     updateTotal();
   }
 
-  // ---- Manual entry ----
-  container.querySelector("#meal-manual-form").addEventListener("submit", (e) => {
+  // ---- Manual entry: auto-fill from the common-foods reference table ----
+  const mmForm = container.querySelector("#meal-manual-form");
+  const mmName = container.querySelector("#mm-name");
+  const mmServings = container.querySelector("#mm-servings");
+  const mmCal = container.querySelector("#mm-cal");
+  const mmProtein = container.querySelector("#mm-protein");
+  const mmCarbs = container.querySelector("#mm-carbs");
+  const mmFat = container.querySelector("#mm-fat");
+  const mmHint = container.querySelector("#mm-match-hint");
+
+  function findFoodMatch(name) {
+    const q = name.trim().toLowerCase();
+    if (!q) return null;
+    return COMMON_FOODS.find((f) => f.name.toLowerCase() === q) || null;
+  }
+
+  function applyFoodMatch() {
+    const match = findFoodMatch(mmName.value);
+    if (!match) {
+      mmHint.style.display = "none";
+      mmHint.textContent = "";
+      return;
+    }
+    const servings = parseFloat(mmServings.value) || 1;
+    mmCal.value = round(match.calories * servings, 0);
+    mmProtein.value = round(match.proteinG * servings, 1);
+    mmCarbs.value = round(match.carbsG * servings, 1);
+    mmFat.value = round(match.fatG * servings, 1);
+    mmHint.style.display = "";
+    mmHint.textContent = `Reference: ${match.portion} = ${match.calories} kcal, ${match.proteinG}g protein, ${match.carbsG}g carbs, ${match.fatG}g fat. Filled in for ${servings} serving${servings === 1 ? "" : "s"} — edit any field if yours differs.`;
+  }
+
+  mmName.addEventListener("input", applyFoodMatch);
+  mmName.addEventListener("change", applyFoodMatch);
+  mmServings.addEventListener("input", applyFoodMatch);
+
+  mmForm.addEventListener("submit", (e) => {
     e.preventDefault();
-    const name = container.querySelector("#mm-name").value.trim();
-    const calories = parseFloat(container.querySelector("#mm-cal").value) || 0;
-    const proteinG = parseFloat(container.querySelector("#mm-protein").value) || 0;
-    const carbsG = parseFloat(container.querySelector("#mm-carbs").value) || 0;
-    const fatG = parseFloat(container.querySelector("#mm-fat").value) || 0;
+    const match = findFoodMatch(mmName.value);
+    const servings = parseFloat(mmServings.value) || 1;
+    const name = match ? `${mmName.value.trim()}${servings !== 1 ? ` (x${servings})` : ""}` : mmName.value.trim();
+    const calories = parseFloat(mmCal.value) || 0;
+    const proteinG = parseFloat(mmProtein.value) || 0;
+    const carbsG = parseFloat(mmCarbs.value) || 0;
+    const fatG = parseFloat(mmFat.value) || 0;
     addMealEntry({
       dateISO: todayISO(),
-      items: [{ name, portion: "", calories, protein_g: proteinG, carbs_g: carbsG, fat_g: fatG }],
+      items: [{ name, portion: match ? match.portion : "", calories, protein_g: proteinG, carbs_g: carbsG, fat_g: fatG }],
       totalCalories: Math.round(calories),
       totalProteinG: Math.round(proteinG),
       totalCarbsG: Math.round(carbsG),
       totalFatG: Math.round(fatG),
       source: "manual",
     });
-    container.querySelector("#meal-manual-form").reset();
+    mmForm.reset();
+    mmHint.style.display = "none";
+    mmHint.textContent = "";
     showToast("Meal logged");
     refresh();
   });

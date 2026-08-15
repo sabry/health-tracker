@@ -10,7 +10,7 @@ import { renderMealsView } from "./meals.js";
 
 // Update this (date + time) whenever the app's files change, so the
 // footer's "Last updated" reflects the actual edit, not just the day.
-const BUILD_TIME = "Aug 14, 2026, 10:22 AM ET";
+const BUILD_TIME = "Aug 15, 2026, 8:40 AM ET";
 
 const TABS = [
   { id: "today", label: "Today", icon: "🏠", render: (el) => renderDashboard(el, goToTab) },
@@ -36,7 +36,22 @@ function goToTab(id) {
   render();
 }
 
+// A tab's render function may return a cleanup callback (e.g. to remove
+// document-level listeners or stop a sensor that would otherwise keep
+// running in the background after navigating away). Call the outgoing
+// tab's cleanup before mounting the next one.
+let currentCleanup = null;
+
 function render() {
+  if (currentCleanup) {
+    try {
+      currentCleanup();
+    } catch (e) {
+      console.error("tab cleanup failed", e);
+    }
+    currentCleanup = null;
+  }
+
   tabbar.innerHTML = TABS.map(
     (t) => `<button class="tab-btn ${t.id === activeTab ? "active" : ""}" data-tab="${t.id}">${t.icon} ${t.label}</button>`
   ).join("");
@@ -46,7 +61,7 @@ function render() {
 
   const tab = TABS.find((t) => t.id === activeTab) || TABS[0];
   viewRoot.innerHTML = "";
-  tab.render(viewRoot);
+  currentCleanup = tab.render(viewRoot) || null;
   window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
 }
 
