@@ -10,6 +10,9 @@
 // purpose — for anything not here, just type the name and enter values
 // manually. Add more rows below any time; each just needs name/portion/
 // calories/proteinG/carbsG/fatG.
+//
+// Curated halal-conscious: no pork/pork-derived items and no alcoholic
+// beverages are included on purpose.
 
 export const COMMON_FOODS = [
   // ---- Fruit ----
@@ -53,8 +56,6 @@ export const COMMON_FOODS = [
   { name: "Lentils, cooked", portion: "1 cup (198g)", calories: 230, proteinG: 18, carbsG: 40, fatG: 0.8 },
   { name: "Shrimp, cooked", portion: "4 oz (113g)", calories: 112, proteinG: 24, carbsG: 0.4, fatG: 1.2 },
   { name: "Turkey breast, roasted", portion: "4 oz (113g)", calories: 153, proteinG: 34, carbsG: 0, fatG: 1 },
-  { name: "Bacon", portion: "2 slices (16g)", calories: 72, proteinG: 5, carbsG: 0.2, fatG: 5.5 },
-  { name: "Pork chop, grilled", portion: "4 oz (113g)", calories: 210, proteinG: 30, carbsG: 0, fatG: 9 },
 
   // ---- Dairy ----
   { name: "Milk, whole", portion: "1 cup (244g)", calories: 149, proteinG: 8, carbsG: 12, fatG: 8 },
@@ -96,8 +97,6 @@ export const COMMON_FOODS = [
   { name: "Coffee, black", portion: "1 cup (240g)", calories: 2, proteinG: 0.3, carbsG: 0, fatG: 0 },
   { name: "Latte, whole milk", portion: "12 oz (340g)", calories: 168, proteinG: 9, carbsG: 13, fatG: 9 },
   { name: "Soda, regular", portion: "12 oz can (355g)", calories: 140, proteinG: 0, carbsG: 39, fatG: 0 },
-  { name: "Beer, regular", portion: "12 oz (355g)", calories: 153, proteinG: 1.6, carbsG: 13, fatG: 0 },
-  { name: "Wine, red or white", portion: "5 oz (147g)", calories: 125, proteinG: 0.1, carbsG: 4, fatG: 0 },
 
   // ---- Common combined meals ----
   { name: "Pizza, cheese slice", portion: "1 slice (107g)", calories: 285, proteinG: 12, carbsG: 36, fatG: 10 },
@@ -159,3 +158,88 @@ export const COMMON_FOODS = [
   { name: "Ayran / laban (yogurt drink)", portion: "1 cup (240ml)", calories: 60, proteinG: 4, carbsG: 4, fatG: 3 },
   { name: "Pomegranate juice", portion: "1 cup (240ml)", calories: 135, proteinG: 0.4, carbsG: 33, fatG: 0.3 },
 ];
+
+// ---------------- Approximate ("fuzzy") name matching ----------------
+//
+// Lets the manual-entry auto-fill find the closest food even when what you
+// typed isn't an exact match — plurals, typos, word order, or just part of
+// a name ("grape leaf" -> "Grape leaves, stuffed (vegetarian)", "humus" ->
+// "Hummus"). An exact match always wins outright; short of that, each food
+// is scored by comparing your query word-by-word against its name (allowing
+// prefixes and small typos via edit distance) and the highest-scoring food
+// above a minimum confidence threshold is returned. Below that threshold
+// nothing is returned, so an unrelated typed phrase won't silently
+// auto-fill the wrong food's numbers.
+
+function normalizeForMatch(s) {
+  return s.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+}
+
+// Classic edit-distance (Levenshtein) between two strings — small, dependency-
+// free, fine for the short words/names involved here.
+function editDistance(a, b) {
+  const m = a.length;
+  const n = b.length;
+  if (m === 0) return n;
+  if (n === 0) return m;
+  let prev = Array.from({ length: n + 1 }, (_, j) => j);
+  for (let i = 1; i <= m; i++) {
+    const row = [i];
+    for (let j = 1; j <= n; j++) {
+      row[j] = a[i - 1] === b[j - 1] ? prev[j - 1] : 1 + Math.min(prev[j - 1], prev[j], row[j - 1]);
+    }
+    prev = row;
+  }
+  return prev[n];
+}
+
+// Similarity (0-1) between two single words: exact match, one a prefix of
+// the other, or close enough by edit distance to catch typos/plurals.
+function wordSimilarity(a, b) {
+  if (a === b) return 1;
+  if (a.startsWith(b) || b.startsWith(a)) return 0.85;
+  const maxLen = Math.max(a.length, b.length);
+  if (maxLen === 0) return 0;
+  return Math.max(0, 1 - editDistance(a, b) / maxLen);
+}
+
+// Score how well a typed query matches one food's name, 0 (no relation) to
+// 1 (exact match). Whole-string containment scores high; otherwise each
+// query word is matched against its closest word in the food name and
+// averaged, so extra/missing words in a multi-word dish name don't tank the
+// score the way a plain whole-string comparison would.
+function scoreFoodMatch(query, food) {
+  const q = normalizeForMatch(query);
+  const name = normalizeForMatch(food.name);
+  if (!q) return 0;
+  if (q === name) return 1;
+  if (q.length >= 3 && name.includes(q)) return 0.9;
+  const qWords = q.split(" ").filter(Boolean);
+  const nameWords = name.split(" ").filter(Boolean);
+  if (!qWords.length || !nameWords.length) return 0;
+  const total = qWords.reduce((sum, qw) => {
+    const best = nameWords.reduce((m, nw) => Math.max(m, wordSimilarity(qw, nw)), 0);
+    return sum + best;
+  }, 0);
+  return total / qWords.length;
+}
+
+const MIN_MATCH_SCORE = 0.55;
+
+// Find the single best-matching food for a typed query, or null if nothing
+// clears the confidence threshold. Requires at least 2 characters so it
+// doesn't guess off a single keystroke.
+export function findFoodMatch(query) {
+  const q = (query || "").trim();
+  if (q.length < 2) return null;
+  let best = null;
+  let bestScore = 0;
+  for (const food of COMMON_FOODS) {
+    const score = scoreFoodMatch(q, food);
+    if (score > bestScore) {
+      bestScore = score;
+      best = food;
+    }
+  }
+  return bestScore >= MIN_MATCH_SCORE ? best : null;
+}

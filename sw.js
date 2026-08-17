@@ -5,7 +5,7 @@
 //
 // Bump CACHE_VERSION whenever any cached file changes (html/css/js/icons)
 // so returning visitors get the update instead of a stale cache.
-const CACHE_VERSION = "v11";
+const CACHE_VERSION = "v12";
 const CACHE_NAME = `health-tracker-${CACHE_VERSION}`;
 
 const APP_SHELL = [

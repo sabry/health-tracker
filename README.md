@@ -54,10 +54,14 @@ and offline.
   entry works with no API key needed, and auto-fills calories/protein/carbs/
   fat for a reference list of common foods — including a Mediterranean /
   Middle Eastern section (dates, hummus, ful medames, falafel, shawarma,
-  stuffed grape leaves, mansaf, knafeh, and more) alongside the general
-  everyday foods — scaled by however many servings you had. Start typing a
-  name like "banana" or "hummus" and pick it from the suggestions; anything
-  not in the list still works, just enter the numbers yourself. Tracks daily
+  stuffed grape leaves, mansaf, knafeh, and more) alongside general everyday
+  foods, all curated halal-conscious (no pork or alcohol) — scaled by
+  however many servings you had. Matching is approximate: start typing a
+  name like "banana" or "hummus" (typos, plurals, and partial names like
+  "grape leaf" or just "falafel" all find the closest match) and the
+  best-matching food's numbers fill in, clearly labeled so you can tell it
+  apart from an exact match; anything not in the list, or with no close
+  enough match, still works with fully manual entry. Tracks daily
   totals against an optional calorie target (a rough Mifflin-St Jeor
   starting estimate you can override) and a 30-day trend chart. See "AI meal
   photo analysis" below for the privacy/cost details before turning that on.
@@ -238,4 +242,8 @@ health-tracker/
   `js/foodDatabase.js` — each entry just needs `name`, `portion`,
   `calories`, `proteinG`, `carbsG`, `fatG`. It's a small, editable starting
   set, not an exhaustive nutrition database; anything not listed still works
-  in Meals → manual entry, you just type the numbers yourself.
+  in Meals → manual entry, you just type the numbers yourself. Matching
+  against what you type is approximate (see `findFoodMatch` in the same
+  file) — it favors exact matches, then close partial/word matches, then
+  falls back to nothing rather than guessing at an unrelated food; adjust
+  `MIN_MATCH_SCORE` there if it feels too eager or too strict.

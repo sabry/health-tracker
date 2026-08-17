@@ -3,7 +3,7 @@ import { currentProfile } from "./profile.js";
 import { todayISO, formatDateShort, formatDateTime, round, estimateDailyCalorieTarget, escapeHtml, ageFromDOB } from "./util.js";
 import { renderLineChart } from "./charts.js";
 import { showToast } from "./ui.js";
-import { COMMON_FOODS } from "./foodDatabase.js";
+import { COMMON_FOODS, findFoodMatch } from "./foodDatabase.js";
 
 // ---------------- Camera meal-photo analyzer ----------------
 //
@@ -484,12 +484,6 @@ export function renderMealsView(container) {
   const mmFat = container.querySelector("#mm-fat");
   const mmHint = container.querySelector("#mm-match-hint");
 
-  function findFoodMatch(name) {
-    const q = name.trim().toLowerCase();
-    if (!q) return null;
-    return COMMON_FOODS.find((f) => f.name.toLowerCase() === q) || null;
-  }
-
   function applyFoodMatch() {
     const match = findFoodMatch(mmName.value);
     if (!match) {
@@ -503,7 +497,8 @@ export function renderMealsView(container) {
     mmCarbs.value = round(match.carbsG * servings, 1);
     mmFat.value = round(match.fatG * servings, 1);
     mmHint.style.display = "";
-    mmHint.textContent = `Reference: ${match.portion} = ${match.calories} kcal, ${match.proteinG}g protein, ${match.carbsG}g carbs, ${match.fatG}g fat. Filled in for ${servings} serving${servings === 1 ? "" : "s"} — edit any field if yours differs.`;
+    const isExact = match.name.trim().toLowerCase() === mmName.value.trim().toLowerCase();
+    mmHint.textContent = `${isExact ? "Matched" : "Closest match:"} "${match.name}" — ${match.portion} = ${match.calories} kcal, ${match.proteinG}g protein, ${match.carbsG}g carbs, ${match.fatG}g fat. Filled in for ${servings} serving${servings === 1 ? "" : "s"} — edit any field if yours differs, or if this isn't the right food.`;
   }
 
   mmName.addEventListener("input", applyFoodMatch);
@@ -514,7 +509,10 @@ export function renderMealsView(container) {
     e.preventDefault();
     const match = findFoodMatch(mmName.value);
     const servings = parseFloat(mmServings.value) || 1;
-    const name = match ? `${mmName.value.trim()}${servings !== 1 ? ` (x${servings})` : ""}` : mmName.value.trim();
+    // Use the matched food's canonical name (not necessarily what was typed
+    // — matching is approximate) so the log stays accurate even after a
+    // typo or partial-name match.
+    const name = match ? `${match.name}${servings !== 1 ? ` (x${servings})` : ""}` : mmName.value.trim();
     const calories = parseFloat(mmCal.value) || 0;
     const proteinG = parseFloat(mmProtein.value) || 0;
     const carbsG = parseFloat(mmCarbs.value) || 0;
