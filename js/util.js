@@ -80,6 +80,16 @@ export function bmi(kg, cm) {
   return kg / (m * m);
 }
 
+// Weight is always stored in kg internally (everything else — BMI, calorie
+// math — assumes kg) so these are purely for display/entry in lbs.
+const KG_PER_LB = 0.45359237;
+export function kgToLbs(kg) {
+  return kg / KG_PER_LB;
+}
+export function lbsToKg(lbs) {
+  return lbs * KG_PER_LB;
+}
+
 export function bmiCategory(value) {
   if (value == null || Number.isNaN(value)) return null;
   if (value < 18.5) return { label: "Underweight", tone: "warn" };

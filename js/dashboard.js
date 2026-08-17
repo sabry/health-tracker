@@ -2,7 +2,7 @@ import { getWeightLog, getVitalsLog, getActivityLog, getExerciseLog, getHrLog, g
 import { currentProfile } from "./profile.js";
 import {
   bmi, bmiCategory, restingHrCategory, bpCategory, round, todayISO, daysAgoISO,
-  formatDateShort, ageFromDOB, estimateWalkingCalories,
+  formatDateShort, ageFromDOB, estimateWalkingCalories, kgToLbs,
 } from "./util.js";
 import { DEFAULT_STEP_GOAL } from "./activity.js";
 import { estimateExerciseCalories } from "./exercises.js";
@@ -46,6 +46,8 @@ export function renderDashboard(container, goToTab) {
   const latestWeight = weightLog[0];
   const bmiValue = latestWeight ? bmi(latestWeight.kg, profile.heightCm) : null;
   const bmiCat = bmiCategory(bmiValue);
+  const weightUnit = profile.weightUnit === "lbs" ? "lbs" : "kg";
+  const weightDisplay = latestWeight ? round(weightUnit === "lbs" ? kgToLbs(latestWeight.kg) : latestWeight.kg, 1) : null;
 
   const todayActivity = activityLog.find((a) => a.dateISO === todayISO());
   const steps = todayActivity ? todayActivity.steps || 0 : 0;
@@ -87,7 +89,7 @@ export function renderDashboard(container, goToTab) {
     <div class="stat-grid">
       <div class="stat-tile ${latestWeight ? "" : "empty"}" data-goto="weight">
         <div class="stat-label">Weight</div>
-        <div class="stat-value">${latestWeight ? `${round(latestWeight.kg, 1)}<span class="unit">kg</span>` : "Log one →"}</div>
+        <div class="stat-value">${latestWeight ? `${weightDisplay}<span class="unit">${weightUnit}</span>` : "Log one →"}</div>
         <div class="stat-sub">${bmiCat ? `BMI ${round(bmiValue, 1)} · ${bmiCat.label}` : latestWeight ? `BMI needs height in Profile` : ""}</div>
       </div>
 

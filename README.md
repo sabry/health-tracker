@@ -20,8 +20,11 @@ and offline.
   steps, exercise streak, resting heart rate, blood pressure, calories eaten,
   and an estimate of calories burned today from walking and home exercises
   (see "Estimated calories burned" below for how that's calculated).
-- **Weight & BMI** — log weigh-ins, see BMI and category, a 90-day trend
-  chart, and 7/30-day deltas.
+- **Weight & BMI** — log weigh-ins in kg or lbs (a unit toggle right on the
+  log form, remembered for next time and used everywhere weight is
+  displayed — weights are always stored in kg internally so BMI and other
+  math stay consistent regardless of which unit you log in), see BMI and
+  category, a 90-day trend chart, and 7/30-day deltas.
 - **Vitals** — blood pressure (with AHA category), waist circumference, and
   sleep hours, each with its own trend chart.
 - **Activity** — a live step counter using your phone's accelerometer
@@ -49,8 +52,11 @@ and offline.
   calories/protein/carbs/fat for each — shown in an editable review table
   before anything is saved, so you can correct the AI's guesses. Manual
   entry works with no API key needed, and auto-fills calories/protein/carbs/
-  fat for ~80 common foods (start typing a name like "banana" and pick it
-  from the suggestions) scaled by however many servings you had — anything
+  fat for a reference list of common foods — including a Mediterranean /
+  Middle Eastern section (dates, hummus, ful medames, falafel, shawarma,
+  stuffed grape leaves, mansaf, knafeh, and more) alongside the general
+  everyday foods — scaled by however many servings you had. Start typing a
+  name like "banana" or "hummus" and pick it from the suggestions; anything
   not in the list still works, just enter the numbers yourself. Tracks daily
   totals against an optional calorie target (a rough Mifflin-St Jeor
   starting estimate you can override) and a 30-day trend chart. See "AI meal
