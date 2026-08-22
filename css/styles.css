@@ -493,6 +493,46 @@ h1, h2, h3, h4 { font-weight: 650; }
 
 .exercise-card p { margin: 0; font-size: 0.85rem; color: var(--text-dim); line-height: 1.45; }
 
+.ex-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.ex-progress-stats,
+.ex-progress-stats-left,
+.ex-progress-stats-right {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+.ex-progress-stats strong,
+.ex-progress-stats-left strong,
+.ex-progress-stats-right strong { color: var(--text); }
+
+.ex-progress-chart,
+.ex-progress-chart-left,
+.ex-progress-chart-right { margin-top: -0.2rem; }
+
+.ex-progress-side {
+  background: var(--bg-panel-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.6rem 0.7rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.ex-progress-side-label {
+  margin: 0;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-faint);
+}
+
 .norm-table {
   width: 100%;
   border-collapse: collapse;

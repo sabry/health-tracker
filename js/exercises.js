@@ -1,6 +1,7 @@
 import { getExerciseLog, addExerciseEntry, deleteExerciseEntry, getWeightLog } from "./storage.js";
 import { todayISO, formatDateShort, formatDateTime, escapeHtml, round } from "./util.js";
 import { showToast, requestWakeLock, releaseWakeLock, formatClock } from "./ui.js";
+import { renderLineChart } from "./charts.js";
 
 // Reference ranges below are general fitness guidelines gathered from
 // commonly published norm tables (e.g. 30-second chair-stand / sit-to-stand
@@ -277,6 +278,8 @@ export function renderExercisesView(container) {
           gap != null && gap >= 5 ? `<span class="badge badge-warn">${gap}s gap between sides — worth mentioning to a doctor if it persists</span>` : "",
         ].filter(Boolean).join("<br>");
       }
+      renderProgress(card, ex, log.filter((e) => e.side === "left"), unitSuffix, "left");
+      renderProgress(card, ex, log.filter((e) => e.side === "right"), unitSuffix, "right");
       return;
     }
 
@@ -292,6 +295,47 @@ export function renderExercisesView(container) {
         row.classList.toggle("current-band", band && row.dataset.band === band.band);
       });
     }
+    renderProgress(card, ex, log, unitSuffix);
+  }
+
+  // Per-exercise (or per-side) progress: a compact best/first/change
+  // summary plus a small trend chart, so improvement over time is visible
+  // right on the card instead of buried in the combined log below. Higher
+  // is better for every exercise here (more reps, longer hold), so a
+  // positive change is always the "improved" direction.
+  function renderProgress(card, ex, log, unitSuffix, side) {
+    const suffix = side ? `-${side}` : "";
+    const statsEl = card.querySelector(`.ex-progress-stats${suffix}`);
+    const chartEl = card.querySelector(`.ex-progress-chart${suffix}`);
+    if (!statsEl || !chartEl) return;
+
+    const sorted = [...log].sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+    if (!sorted.length) {
+      statsEl.textContent = "Log a set to start tracking your trend.";
+      chartEl.innerHTML = "";
+      return;
+    }
+
+    const first = sorted[0];
+    const latest = sorted[sorted.length - 1];
+    const best = sorted.reduce((b, e) => (e.value > b.value ? e : b), sorted[0]);
+
+    if (sorted.length === 1) {
+      statsEl.innerHTML = `First logged: <strong>${first.value}${unitSuffix}</strong> on ${formatDateShort(first.dateISO)} — log again to see a trend.`;
+    } else {
+      const delta = round(latest.value - first.value, 1);
+      const deltaSign = delta > 0 ? "+" : "";
+      const deltaTone = delta > 0 ? "good" : delta < 0 ? "warn" : "neutral";
+      statsEl.innerHTML = `Best <strong>${best.value}${unitSuffix}</strong> (${formatDateShort(best.dateISO)}) · First <strong>${first.value}${unitSuffix}</strong> (${formatDateShort(first.dateISO)}) · <span class="badge badge-${deltaTone}">${deltaSign}${delta}${unitSuffix} since first</span>`;
+    }
+
+    renderLineChart(chartEl, sorted.map((e) => ({ iso: e.dateISO, value: e.value })), {
+      height: 100,
+      yLabel: (v) => round(v, 0),
+      tooltipValue: (v) => `${v}${unitSuffix}`,
+      ariaLabel: `${ex.name}${side ? ` (${side})` : ""} trend`,
+      emptyText: "Log a set to start tracking your trend.",
+    });
   }
 
   function refreshLogList() {
@@ -336,6 +380,23 @@ function exerciseCardHTML(ex) {
     <h4>${ex.name} <span class="exercise-cat">${ex.category}</span></h4>
     <p>${ex.description}</p>
     <p class="ex-latest" style="font-size:0.82rem; color:var(--text-dim);"></p>
+    <div class="ex-progress">
+      ${ex.sides ? `
+        <div class="ex-progress-side">
+          <p class="ex-progress-side-label">Left</p>
+          <p class="ex-progress-stats-left"></p>
+          <div class="ex-progress-chart-left"></div>
+        </div>
+        <div class="ex-progress-side">
+          <p class="ex-progress-side-label">Right</p>
+          <p class="ex-progress-stats-right"></p>
+          <div class="ex-progress-chart-right"></div>
+        </div>
+      ` : `
+        <p class="ex-progress-stats"></p>
+        <div class="ex-progress-chart"></div>
+      `}
+    </div>
     ${ex.normTable.length ? `
       <table class="norm-table">
         <thead><tr><th>Band</th><th>${ex.unit}</th></tr></thead>
