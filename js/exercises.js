@@ -5,11 +5,17 @@ import { renderLineChart } from "./charts.js";
 
 // Reference ranges below are general fitness guidelines gathered from
 // commonly published norm tables (e.g. 30-second chair-stand / sit-to-stand
-// norms, standard push-up/sit-up test bands, and single-leg-stance research
-// summaries) for adults around 60-69. They're a rough compass, not a
-// clinical assessment — form and consistency matter more than hitting a
-// band, and anyone with joint pain, dizziness, or heart/lung conditions
-// should check with a doctor before pushing hard on these.
+// norms, standard push-up/sit-up test bands, the Rikli & Jones Senior
+// Fitness Test's 2-minute step test norms for men 60-69, and the tandem
+// stance / SPPB balance-screening cutoffs used in fall-risk assessments)
+// for adults around 60-69. They're a rough compass, not a clinical
+// assessment — form and consistency matter more than hitting a band, and
+// anyone with joint pain, dizziness, or heart/lung conditions should check
+// with a doctor before pushing hard on these. A few exercises (glute
+// bridge, bird dog, side leg raises, and the individual stretches) are
+// left without a norm table on purpose — there's no well-established
+// published standard for them to compare against, so the per-exercise
+// trend chart below is the honest way to track progress on those.
 export const EXERCISES = [
   {
     id: "pushups",
@@ -124,6 +130,7 @@ export const EXERCISES = [
     howTo: "Slow and controlled beats fast — 2 seconds up, pause, 2 seconds down. Builds ankle stability, which helps balance too.",
     hasTimer: false,
     met: 3.0,
+    secPerRep: 4,
     normTable: [
       { band: "Building up", range: "<10", min: 0, max: 9, tone: "warn" },
       { band: "Good", range: "10–19", min: 10, max: 19, tone: "good" },
@@ -131,14 +138,137 @@ export const EXERCISES = [
     ],
   },
   {
-    id: "stretch",
-    name: "Stretching / mobility",
-    category: "Flexibility",
-    unit: "minutes",
-    description: "Hamstrings, calves, hip flexors, shoulders, low back — hold each stretch 20–30 seconds, no bouncing.",
-    howTo: "Best after a short warm-up or at the end of a session, while muscles are warm. Breathe through it, ease off if anything sharp shows up.",
+    id: "glute-bridge",
+    name: "Glute bridge",
+    category: "Strength",
+    unit: "reps",
+    description: "Strengthens the glutes and lower back — helps with standing up, stairs, and hip stability.",
+    howTo: "Lie on your back, knees bent, feet flat on the floor hip-width apart, arms at your sides. Squeeze your glutes and lift your hips up until your body forms a straight line from shoulders to knees — don't overarch your lower back. Pause briefly at the top, then lower with control. That's one rep.",
     hasTimer: false,
-    met: 2.5,
+    met: 3.5,
+    secPerRep: 3,
+    normTable: [],
+  },
+  {
+    id: "bird-dog",
+    name: "Bird dog",
+    category: "Strength",
+    unit: "reps",
+    description: "Builds core stability and coordination — a controlled, low-back-friendly alternative to sit-ups.",
+    howTo: "Start on hands and knees, hands under shoulders, knees under hips. Slowly extend one arm straight forward and the opposite leg straight back, keeping your hips and back level — don't let your back sag or twist. Hold briefly, then return to start and switch sides. One rep = both sides.",
+    hasTimer: false,
+    met: 3.0,
+    secPerRep: 5,
+    normTable: [],
+  },
+  {
+    id: "side-leg-raises",
+    name: "Side leg raises",
+    category: "Strength",
+    unit: "reps",
+    description: "Strengthens the hip and outer thigh — supports balance and can help protect against falls.",
+    howTo: "Stand tall holding onto a wall or sturdy chair for balance. Keeping your leg straight and toes pointing forward, lift one leg out to the side, then lower with control — don't lean or swing your body to gain height. Do a set on one side, then switch legs.",
+    hasTimer: false,
+    met: 3.0,
+    secPerRep: 3,
+    normTable: [],
+  },
+  {
+    id: "step-test-2min",
+    name: "2-minute step test",
+    category: "Cardio",
+    unit: "right-knee raises in 2 min",
+    description: "A standard fitness test used with older adults to gauge aerobic endurance — march in place and count right-knee lifts.",
+    howTo: "Find a wall or doorframe and mark a target height roughly midway between your kneecap and hip bone. March in place for 2 minutes, lifting your right knee to that target height each time, and count how many times it gets there. Pace yourself — this should feel like brisk, sustainable effort, not a sprint. Stop early if you feel unsteady or overly winded.",
+    hasTimer: true,
+    timerLabel: "2-minute step test",
+    suggestedSeconds: 120,
+    met: 4.5,
+    normTable: [
+      { band: "Building up", range: "<75", min: 0, max: 74, tone: "warn" },
+      { band: "Average", range: "75–119", min: 75, max: 119, tone: "neutral" },
+      { band: "Good", range: "120–149", min: 120, max: 149, tone: "good" },
+      { band: "Excellent", range: "150+", min: 150, max: null, tone: "accent" },
+    ],
+  },
+  {
+    id: "tandem-stance",
+    name: "Tandem stance (heel-to-toe balance)",
+    category: "Balance",
+    unit: "seconds",
+    description: "A standard balance-screening test used in fall-risk assessments — standing heel-to-toe in a straight line.",
+    howTo: "Stand near a wall or counter just in case. Place one foot directly in front of the other, heel touching toe, in a straight line, arms however feels natural. Hold as still as you can without stepping out of position or grabbing support. Time yourself, then switch which foot is in front next time.",
+    hasTimer: true,
+    timerLabel: "Tandem stance hold",
+    met: 2.0,
+    normTable: [
+      { band: "Building up", range: "<3s", min: 0, max: 2, tone: "warn" },
+      { band: "Improving", range: "3–9s", min: 3, max: 9, tone: "neutral" },
+      { band: "Meets balance benchmark", range: "10s+", min: 10, max: null, tone: "good" },
+    ],
+  },
+  {
+    id: "hamstring-stretch",
+    name: "Hamstring stretch",
+    category: "Flexibility",
+    unit: "seconds",
+    sides: true,
+    description: "Stretches the back of the thigh — helps with bending, walking stride, and lower-back tension.",
+    howTo: "Sit on the edge of a sturdy chair or the floor with one leg extended straight, heel on the ground, toes pointing up. Keep your back straight and hinge forward from the hips (not the waist) until you feel a gentle pull behind the thigh — don't bounce. Hold, breathing steadily, then switch legs. Aim for about 20-30 seconds a side.",
+    hasTimer: true,
+    timerLabel: "Hamstring stretch hold",
+    met: 2.3,
+    normTable: [],
+  },
+  {
+    id: "calf-stretch",
+    name: "Calf stretch",
+    category: "Flexibility",
+    unit: "seconds",
+    sides: true,
+    description: "Stretches the back of the lower leg — helps with ankle mobility and can ease tightness that affects your walking stride.",
+    howTo: "Stand facing a wall, hands on the wall for support. Step one foot back, keeping that back leg straight with its heel flat on the floor, front knee bent. Lean gently into the wall until you feel a stretch in the back calf. Hold, then switch legs. Aim for about 20-30 seconds a side.",
+    hasTimer: true,
+    timerLabel: "Calf stretch hold",
+    met: 2.3,
+    normTable: [],
+  },
+  {
+    id: "hip-flexor-stretch",
+    name: "Hip flexor stretch",
+    category: "Flexibility",
+    unit: "seconds",
+    sides: true,
+    description: "Stretches the front of the hip — tight hip flexors from sitting can affect posture and stride length.",
+    howTo: "From a half-kneeling position (one knee on the floor, ideally on a cushion, other foot flat in front with the knee bent ~90°), gently shift your weight forward while staying upright until you feel a stretch across the front of the hip on the kneeling-leg side. Use a wall or chair for balance if needed. Hold, then switch legs. Aim for about 20-30 seconds a side.",
+    hasTimer: true,
+    timerLabel: "Hip flexor stretch hold",
+    met: 2.3,
+    normTable: [],
+  },
+  {
+    id: "shoulder-stretch",
+    name: "Shoulder stretch",
+    category: "Flexibility",
+    unit: "seconds",
+    sides: true,
+    description: "Stretches the back of the shoulder and upper arm — helps with overhead reach and shoulder mobility.",
+    howTo: "Bring one arm straight across your chest at shoulder height. With your other hand (or forearm), gently press it closer to your chest until you feel a stretch in the shoulder. Keep both shoulders relaxed and down, away from your ears. Hold, then switch arms. Aim for about 20-30 seconds a side.",
+    hasTimer: true,
+    timerLabel: "Shoulder stretch hold",
+    met: 2.3,
+    normTable: [],
+  },
+  {
+    id: "lower-back-stretch",
+    name: "Lower back stretch",
+    category: "Flexibility",
+    unit: "seconds",
+    description: "Gently stretches the lower back and glutes — can ease stiffness after sitting.",
+    howTo: "Lie on your back on a mat or carpeted floor. Bring one or both knees up toward your chest and hold them there with your hands, keeping your lower back relaxed against the floor. If bringing both knees up is uncomfortable, do one leg at a time. Hold, breathing steadily, then release slowly. Aim for about 20-30 seconds.",
+    hasTimer: true,
+    timerLabel: "Lower back stretch hold",
+    met: 2.3,
     normTable: [],
   },
 ];
@@ -146,11 +276,12 @@ export const EXERCISES = [
 // Rough MET-based calorie estimate for one logged exercise entry (ACSM
 // formula: kcal = MET x 3.5 x kg / 200 x minutes). Duration is derived from
 // what's actually logged: a direct time for seconds/minutes exercises, the
-// test's fixed duration for the timed sit-up/chair-stand tests (the value
-// logged there is a rep count *within* that fixed window, not a duration),
-// or an assumed ~3 seconds per rep (~4s for slower calf raises) for the
-// other rep-counted exercises. Approximate, not a measurement — actual
-// effort varies with pace, bodyweight distribution, and form.
+// test's fixed duration for the timed sit-up/chair-stand/2-minute-step
+// tests (the value logged there is a rep count *within* that fixed window,
+// not a duration), or an assumed number of seconds per rep (each exercise's
+// `secPerRep`, default 3) for the other rep-counted exercises. Approximate,
+// not a measurement — actual effort varies with pace, bodyweight
+// distribution, and form.
 export function estimateExerciseCalories(entry, weightKg) {
   const ex = EXERCISES.find((x) => x.id === entry.exerciseId);
   if (!ex || !ex.met || !weightKg || entry.value == null) return 0;
@@ -162,8 +293,7 @@ export function estimateExerciseCalories(entry, weightKg) {
   } else if (ex.unit === "minutes") {
     minutes = entry.value;
   } else {
-    const secPerRep = ex.id === "calf-raises" ? 4 : 3;
-    minutes = (entry.value * secPerRep) / 60;
+    minutes = (entry.value * (ex.secPerRep || 3)) / 60;
   }
   if (!minutes) return 0;
   return ((ex.met * 3.5 * weightKg) / 200) * minutes;

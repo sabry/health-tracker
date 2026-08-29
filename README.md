@@ -36,15 +36,27 @@ and offline.
   — but counting itself still needs the screen on and the app in front the
   whole time (see "Why the step counter needs the screen on" below, this
   isn't fixable from a web app).
-- **Exercises** — push-ups, sit-ups, chair-stand/squats, standing one-foot
-  balance, plank, wall sit, calf raises, and stretching, each with a short
-  how-to and general reference bands (not clinical norms) for adults around
-  60–69. Timed exercises get a built-in stopwatch that keeps the screen
-  awake (Screen Wake Lock API where supported). Each card also shows its own
-  progress at a glance — best result, first-ever result, the change since
-  then, and a small trend chart — so improvement (or a plateau) in any one
-  exercise is visible without digging through the combined log below
-  (balance is tracked separately per leg, same as its Left/Right logging).
+- **Exercises** — 17 bodyweight exercises across four categories: Strength
+  (push-ups, sit-ups, chair-stand/squats, plank, wall sit, calf raises,
+  glute bridge, bird dog, side leg raises), Balance (standing one-foot
+  balance, tandem/heel-to-toe stance), Cardio (a 2-minute step test), and
+  Flexibility (hamstring, calf, hip flexor, shoulder, and lower back
+  stretches — each its own card with its own specific how-to, not lumped
+  into one generic "stretching" entry). Each has a short how-to; most also
+  have general reference bands (not clinical norms) for adults around
+  60–69, sourced from published fitness-test standards where they genuinely
+  exist (the Rikli & Jones Senior Fitness Test norms for the step test, and
+  SPPB/CDC STEADI balance-screening cutoffs for tandem stance) — a handful
+  of exercises (glute bridge, bird dog, side leg raises, the stretches)
+  intentionally have no band, since no well-established published standard
+  exists for them; track your own progress on those with the trend chart
+  instead. Timed exercises get a built-in stopwatch that keeps the screen
+  awake (Screen Wake Lock API where supported). Every card also shows its
+  own progress at a glance — best result, first-ever result, the change
+  since then, and a small trend chart — so improvement (or a plateau) in
+  any one exercise is visible without digging through the combined log
+  below (balance and the sided stretches are tracked separately per side,
+  same as one-foot balance's Left/Right logging).
 - **Heart Rate** — a manual resting-HR log with reference ranges and
   age-based training zones (Tanaka formula), *and* a camera-based pulse
   reader: cover your phone's rear camera/flash with a fingertip and the app
