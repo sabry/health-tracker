@@ -24,7 +24,7 @@ and offline.
   log form, remembered for next time and used everywhere weight is
   displayed — weights are always stored in kg internally so BMI and other
   math stay consistent regardless of which unit you log in), see BMI and
-  category, a 90-day trend chart, and 7/30-day deltas.
+  category, an all-time trend chart, and 7/30-day deltas.
 - **Vitals** — blood pressure (with AHA category), waist circumference, and
   sleep hours, each with its own trend chart.
 - **Activity** — a live step counter using your phone's accelerometer

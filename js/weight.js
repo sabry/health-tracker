@@ -59,7 +59,7 @@ export function renderWeightView(container) {
     </div>
 
     <div class="card">
-      <h3>Trend (last 90 days)</h3>
+      <h3>Trend (all time)</h3>
       <div id="weight-chart"></div>
     </div>
 
@@ -125,17 +125,14 @@ export function renderWeightView(container) {
 
   function renderChart(log) {
     const chartEl = container.querySelector("#weight-chart");
-    const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - 90);
     const points = [...log]
-      .filter((e) => new Date(e.dateISO) >= cutoff)
       .sort((a, b) => (a.dateISO < b.dateISO ? -1 : 1))
       .map((e) => ({ iso: e.dateISO, value: unit === "lbs" ? kgToLbs(e.kg) : e.kg }));
     renderLineChart(chartEl, points, {
       yLabel: (v) => round(v, 0),
       tooltipValue: (v) => `${round(v, 1)} ${unit}`,
-      ariaLabel: "Weight trend",
-      emptyText: "No weigh-ins in the last 90 days.",
+      ariaLabel: "Weight trend, all time",
+      emptyText: "No weigh-ins yet.",
     });
   }
 
